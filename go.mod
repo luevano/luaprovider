@@ -9,7 +9,7 @@ require (
 	github.com/go-rod/rod v0.114.5
 	github.com/ka-weihe/fast-levenshtein v0.0.0-20201227151214-4c99ee36a1ba
 	github.com/luevano/gopher-luadoc v0.3.0
-	github.com/luevano/libmangal v0.9.0
+	github.com/luevano/libmangal v0.9.1
 	github.com/mvdan/xurls v1.1.0
 	github.com/philippgille/gokv v0.6.0
 	github.com/philippgille/gokv/syncmap v0.6.0

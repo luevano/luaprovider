@@ -108,6 +108,9 @@ func (p *provider) SetLogger(logger *libmangal.Logger) {
 	p.logger = logger
 }
 
+var glOpt gluamapper.Option = gluamapper.Option{NameFunc: gluamapper.Id, TagName: "gluamapper", ErrorUnused: false}
+var glMapper gluamapper.Mapper = *gluamapper.NewMapper(glOpt)
+
 func (p *provider) SearchMangas(
 	ctx context.Context,
 	query string,
@@ -121,7 +124,7 @@ func (p *provider) SearchMangas(
 		p.fnSearchMangas,
 		func(i int, table *lua.LTable) (libmangal.Manga, error) {
 			var manga luaManga
-			if err := gluamapper.Map(table, &manga); err != nil {
+			if err := glMapper.Map(table, &manga); err != nil {
 				return luaManga{}, err
 			}
 
@@ -166,7 +169,7 @@ func (p *provider) mangaVolumes(
 		func(_ int, table *lua.LTable) (libmangal.Volume, error) {
 			var volume luaVolume
 
-			if err := gluamapper.Map(table, &volume); err != nil {
+			if err := glMapper.Map(table, &volume); err != nil {
 				return luaVolume{}, err
 			}
 
@@ -207,7 +210,7 @@ func (p *provider) volumeChapters(
 		p.fnVolumeChapters,
 		func(i int, table *lua.LTable) (libmangal.Chapter, error) {
 			var chapter luaChapter
-			if err := gluamapper.Map(table, &chapter); err != nil {
+			if err := glMapper.Map(table, &chapter); err != nil {
 				return luaChapter{}, err
 			}
 
@@ -252,7 +255,7 @@ func (p *provider) chapterPages(
 		p.fnChapterPages,
 		func(i int, table *lua.LTable) (libmangal.Page, error) {
 			var page luaPage
-			if err := gluamapper.Map(table, &page); err != nil {
+			if err := glMapper.Map(table, &page); err != nil {
 				return luaPage{}, err
 			}
 
