@@ -1,9 +1,9 @@
 package encoding
 
 import (
-	luadoc "github.com/mangalorg/gopher-luadoc"
-	"github.com/mangalorg/luaprovider/lib/encoding/base64"
-	"github.com/mangalorg/luaprovider/lib/encoding/json"
+	luadoc "github.com/luevano/gopher-luadoc"
+	"github.com/luevano/luaprovider/lib/encoding/base64"
+	"github.com/luevano/luaprovider/lib/encoding/json"
 	lua "github.com/yuin/gopher-lua"
 )
 

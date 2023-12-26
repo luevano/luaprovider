@@ -1,12 +1,12 @@
 package crypto
 
 import (
-	luadoc "github.com/mangalorg/gopher-luadoc"
-	"github.com/mangalorg/luaprovider/lib/crypto/aes"
-	"github.com/mangalorg/luaprovider/lib/crypto/md5"
-	"github.com/mangalorg/luaprovider/lib/crypto/sha1"
-	"github.com/mangalorg/luaprovider/lib/crypto/sha256"
-	"github.com/mangalorg/luaprovider/lib/crypto/sha512"
+	luadoc "github.com/luevano/gopher-luadoc"
+	"github.com/luevano/luaprovider/lib/crypto/aes"
+	"github.com/luevano/luaprovider/lib/crypto/md5"
+	"github.com/luevano/luaprovider/lib/crypto/sha1"
+	"github.com/luevano/luaprovider/lib/crypto/sha256"
+	"github.com/luevano/luaprovider/lib/crypto/sha512"
 	lua "github.com/yuin/gopher-lua"
 )
 

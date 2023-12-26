@@ -3,7 +3,7 @@ package http
 import (
 	"net/http"
 
-	luadoc "github.com/mangalorg/gopher-luadoc"
+	luadoc "github.com/luevano/gopher-luadoc"
 	"github.com/philippgille/gokv"
 	lua "github.com/yuin/gopher-lua"
 )

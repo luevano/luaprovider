@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/mangalorg/libmangal"
+	"github.com/luevano/libmangal"
 	"github.com/philippgille/gokv"
 	"github.com/philippgille/gokv/syncmap"
 	lua "github.com/yuin/gopher-lua"

@@ -3,8 +3,8 @@ package urls
 import (
 	"net/url"
 
-	luadoc "github.com/mangalorg/gopher-luadoc"
-	"github.com/mangalorg/luaprovider/util"
+	luadoc "github.com/luevano/gopher-luadoc"
+	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
 )
 

@@ -1,7 +1,7 @@
 package regexp
 
 import (
-	"github.com/mangalorg/luaprovider/util"
+	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
 	"regexp"
 )

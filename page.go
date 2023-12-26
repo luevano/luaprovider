@@ -1,7 +1,7 @@
 package luaprovider
 
 import (
-	"github.com/mangalorg/libmangal"
+	"github.com/luevano/libmangal"
 	"regexp"
 )
 

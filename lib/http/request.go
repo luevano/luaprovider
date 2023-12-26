@@ -3,7 +3,7 @@ package http
 import (
 	"bufio"
 	"bytes"
-	"github.com/mangalorg/luaprovider/util"
+	"github.com/luevano/luaprovider/util"
 	"github.com/philippgille/gokv"
 	lua "github.com/yuin/gopher-lua"
 	"net/http"

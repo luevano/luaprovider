@@ -3,8 +3,8 @@ package util
 import (
 	"sync"
 
-	luadoc "github.com/mangalorg/gopher-luadoc"
-	"github.com/mangalorg/luaprovider/util"
+	luadoc "github.com/luevano/gopher-luadoc"
+	"github.com/luevano/luaprovider/util"
 	"github.com/samber/lo"
 	lua "github.com/yuin/gopher-lua"
 	"golang.org/x/exp/slices"

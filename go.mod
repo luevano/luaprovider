@@ -1,4 +1,4 @@
-module github.com/mangalorg/luaprovider
+module github.com/luevano/luaprovider
 
 go 1.21
 
@@ -8,8 +8,8 @@ require (
 	github.com/cixtor/readability v1.0.0
 	github.com/go-rod/rod v0.114.5
 	github.com/ka-weihe/fast-levenshtein v0.0.0-20201227151214-4c99ee36a1ba
-	github.com/mangalorg/gopher-luadoc v0.2.2
-	github.com/mangalorg/libmangal v0.8.0
+	github.com/luevano/gopher-luadoc v0.3.0
+	github.com/luevano/libmangal v0.9.0
 	github.com/mvdan/xurls v1.1.0
 	github.com/philippgille/gokv v0.6.0
 	github.com/philippgille/gokv/syncmap v0.6.0
@@ -32,6 +32,7 @@ require (
 	github.com/philippgille/gokv/encoding v0.6.0 // indirect
 	github.com/philippgille/gokv/util v0.6.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/ysmood/fetchup v0.2.4 // indirect
 	github.com/ysmood/goob v0.4.0 // indirect

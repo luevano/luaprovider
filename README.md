@@ -5,18 +5,13 @@
 
 > **Warning**
 >
-> This is a beta software. The API is not stable and may change at any time.
+> The API is not stable and may change at any time.
 
-This is a generic provider for
-[libmangal](https://github.com/mangalorg/libmangal) that uses
-[Lua](https://www.lua.org/) scripts to create _subproviders_.
+This is a generic provider for [libmangal](https://github.com/luevano/libmangal) that uses [Lua](https://www.lua.org/) scripts to create _subproviders_.
 
-It uses
-[native go implementation of the Lua interpreter](https://github.com/yuin/gopher-lua)
-and provides a set of libraries that can be used in the scripts.
+It uses [native go implementation of the Lua interpreter](https://github.com/yuin/gopher-lua) and provides a set of libraries that can be used in the scripts.
 
-Take a look at
-[the official lua scripts repository](https://github.com/mangalorg/saturno)
+**Note**: This is a fork of [mangalorg/luaprovider](https://github.com/mangalorg/luaprovider).
 
 ## Features
 
@@ -39,9 +34,9 @@ Take a look at
 
 ### Overview
 
-See [examples of scripts](https://github.com/mangalorg/saturno/tree/main/luas)
+See [examples of scripts](https://github.com/luevano/saturno).
 
-See [SDK documentation](https://github.com/mangalorg/luaprovider/wiki/sdk.lua)
+See [SDK documentation](https://github.com/mangalorg/luaprovider/wiki/sdk.lua) (still in the original repo).
 
 Scripts must look like this:
 
@@ -80,7 +75,7 @@ local sdk = require("sdk")
 
 Which provides these packages:
 
-[Documentation](https://github.com/mangalorg/luaprovider/wiki/sdk.lua)
+[Documentation](https://github.com/mangalorg/luaprovider/wiki/sdk.lua) (still in the original repo).
 
 <details>
 <summary>Packages</summary>

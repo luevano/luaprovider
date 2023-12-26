@@ -3,7 +3,7 @@ package base64
 import (
 	"encoding/base64"
 
-	luadoc "github.com/mangalorg/gopher-luadoc"
+	luadoc "github.com/luevano/gopher-luadoc"
 	lua "github.com/yuin/gopher-lua"
 )
 

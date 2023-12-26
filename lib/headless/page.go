@@ -2,7 +2,7 @@ package headless
 
 import (
 	"github.com/go-rod/rod"
-	"github.com/mangalorg/luaprovider/util"
+	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
 )
 

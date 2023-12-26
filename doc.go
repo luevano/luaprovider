@@ -3,7 +3,7 @@ package luaprovider
 import (
 	_ "embed"
 
-	"github.com/mangalorg/luaprovider/lib"
+	"github.com/luevano/luaprovider/lib"
 	lua "github.com/yuin/gopher-lua"
 )
 

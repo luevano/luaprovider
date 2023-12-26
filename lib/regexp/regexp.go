@@ -3,8 +3,8 @@ package regexp
 import (
 	"regexp"
 
-	luadoc "github.com/mangalorg/gopher-luadoc"
-	"github.com/mangalorg/luaprovider/util"
+	luadoc "github.com/luevano/gopher-luadoc"
+	"github.com/luevano/luaprovider/util"
 	"github.com/mvdan/xurls"
 	lua "github.com/yuin/gopher-lua"
 )

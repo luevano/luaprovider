@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/mangalorg/libmangal"
+	"github.com/luevano/libmangal"
 	"github.com/philippgille/gokv"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"

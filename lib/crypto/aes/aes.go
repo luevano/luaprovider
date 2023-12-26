@@ -3,7 +3,7 @@ package aes
 import (
 	"crypto/aes"
 
-	luadoc "github.com/mangalorg/gopher-luadoc"
+	luadoc "github.com/luevano/gopher-luadoc"
 	lua "github.com/yuin/gopher-lua"
 )
 

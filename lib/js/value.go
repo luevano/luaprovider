@@ -1,7 +1,7 @@
 package js
 
 import (
-	"github.com/mangalorg/luaprovider/util"
+	"github.com/luevano/luaprovider/util"
 	"github.com/robertkrimen/otto"
 	lua "github.com/yuin/gopher-lua"
 )

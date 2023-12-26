@@ -2,7 +2,7 @@ package luaprovider
 
 import (
 	"encoding/json"
-	"github.com/mangalorg/libmangal"
+	"github.com/luevano/libmangal"
 	lua "github.com/yuin/gopher-lua"
 )
 

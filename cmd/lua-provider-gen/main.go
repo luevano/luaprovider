@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/mangalorg/luaprovider"
+	"github.com/luevano/luaprovider"
 	"log"
 	"os"
 	"path/filepath"

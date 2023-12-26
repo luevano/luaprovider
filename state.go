@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mangalorg/luaprovider/lib"
+	"github.com/luevano/luaprovider/lib"
 	"github.com/philippgille/gokv"
 	"github.com/samber/lo"
 	lua "github.com/yuin/gopher-lua"
