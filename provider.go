@@ -64,7 +64,6 @@ func loadItems[Input IntoLValue, Output any](
 	}, lo.Map(args, func(arg Input, _ int) lua.LValue {
 		return arg.IntoLValue()
 	})...)
-
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +75,7 @@ func loadItems[Input IntoLValue, Output any](
 		values = append(values, value)
 	})
 
-	var items = make([]Output, len(values))
+	items := make([]Output, len(values))
 	for i, value := range values {
 		logger.Log(fmt.Sprintf("Parsing item %d", i))
 		table, ok := value.(*lua.LTable)
@@ -108,8 +107,10 @@ func (p *provider) SetLogger(logger *libmangal.Logger) {
 	p.logger = logger
 }
 
-var glOpt gluamapper.Option = gluamapper.Option{NameFunc: gluamapper.Id, TagName: "gluamapper", ErrorUnused: false}
-var glMapper gluamapper.Mapper = *gluamapper.NewMapper(glOpt)
+var (
+	glOpt    gluamapper.Option = gluamapper.Option{NameFunc: gluamapper.Id, TagName: "gluamapper", ErrorUnused: false}
+	glMapper gluamapper.Mapper = *gluamapper.NewMapper(glOpt)
+)
 
 func (p *provider) SearchMangas(
 	ctx context.Context,
@@ -177,6 +178,14 @@ func (p *provider) mangaVolumes(
 				return luaVolume{}, fmt.Errorf("invalid volume number: %d", volume.Number)
 			}
 
+			// TODO: do this right?
+			// this gives the :manga() function to volume
+			// p.state.SetFuncs(table, map[string]lua.LGFunction{"manga": func(state *lua.LState) int {
+			// 	state.Push(manga.table)
+			// 	return 1
+			// }})
+			// dirty way of giving access to manga table
+			table.RawSetString("manga", manga.table)
 			volume.table = table
 			volume.manga = &manga
 			return volume, nil
@@ -222,6 +231,8 @@ func (p *provider) volumeChapters(
 				chapter.Number = float32(i)
 			}
 
+			// TODO: do this right? see above for volume
+			table.RawSetString("volume", volume.table)
 			chapter.table = table
 			chapter.volume = &volume
 			return chapter, nil
