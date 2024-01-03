@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="150px" alt="a logo depicting a moon" src="https://github.com/mangalorg/luaprovider/assets/62389790/7602ff8f-3127-44ab-82c0-bbe58383297f">
+  <img width="150px" alt="a logo depicting a moon" src="moon.png">
   <h1>Lua Provider</h1>
 </div>
 
@@ -120,3 +120,7 @@ This command will create the following files:
 - `sdk.lua` - gives IDE autocompletion
 - `provider.lua` - a provider script template
 - `.luarc.json` - a language server configuration
+
+## Credits
+
+Moon logo: [Moon phase icons created by vectorsmarket15 - Flaticon](https://www.flaticon.com/free-icons/moon-phase "moon phase icons")
