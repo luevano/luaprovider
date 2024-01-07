@@ -10,7 +10,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-func newState(options Options) (*lua.LState, gokv.Store, error) {
+func newState(options Options, providerID string) (*lua.LState, gokv.Store, error) {
 	libs := []lua.LGFunction{
 		lua.OpenBase,
 		lua.OpenTable,
@@ -30,7 +30,7 @@ func newState(options Options) (*lua.LState, gokv.Store, error) {
 		injectLib(state)
 	}
 
-	store, err := options.HTTPStoreProvider()
+	store, err := options.HTTPStoreProvider(providerID)
 	if err != nil {
 		return nil, nil, err
 	}

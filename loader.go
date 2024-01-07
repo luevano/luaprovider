@@ -15,14 +15,14 @@ var _ libmangal.ProviderLoader = (*loader)(nil)
 
 type Options struct {
 	HTTPClient        *http.Client
-	HTTPStoreProvider func() (gokv.Store, error)
+	HTTPStoreProvider func(providerID string) (gokv.Store, error)
 	PackagePaths      []string
 }
 
 func DefaultOptions() Options {
 	return Options{
 		HTTPClient: &http.Client{},
-		HTTPStoreProvider: func() (gokv.Store, error) {
+		HTTPStoreProvider: func(providerID string) (gokv.Store, error) {
 			return syncmap.NewStore(syncmap.DefaultOptions), nil
 		},
 	}
@@ -63,7 +63,7 @@ func (l loader) Load(ctx context.Context) (libmangal.Provider, error) {
 		options: l.options,
 	}
 
-	state, store, err := newState(l.options)
+	state, store, err := newState(l.options, l.info.ID)
 	if err != nil {
 		return nil, err
 	}
