@@ -1203,7 +1203,7 @@ func mapAsync(L *lua.LState) int {
 	mapped := L.CheckTable(1)
 	fn := L.CheckFunction(2)
 
-	var m = make(map[lua.LValue]lua.LValue)
+	m := make(map[lua.LValue]lua.LValue)
 	mapped.ForEach(func(key lua.LValue, value lua.LValue) {
 		m[key] = value
 	})
