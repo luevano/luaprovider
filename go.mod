@@ -9,7 +9,7 @@ require (
 	github.com/go-rod/rod v0.114.6
 	github.com/ka-weihe/fast-levenshtein v0.0.0-20201227151214-4c99ee36a1ba
 	github.com/luevano/gopher-luadoc v0.3.1
-	github.com/luevano/libmangal v0.10.0
+	github.com/luevano/libmangal v0.11.0
 	github.com/mvdan/xurls v1.1.0
 	github.com/philippgille/gokv v0.6.0
 	github.com/philippgille/gokv/syncmap v0.6.0
@@ -30,7 +30,7 @@ require (
 	github.com/pdfcpu/pdfcpu v0.6.0 // indirect
 	github.com/philippgille/gokv/encoding v0.6.0 // indirect
 	github.com/philippgille/gokv/util v0.6.0 // indirect
-	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/rivo/uniseg v0.4.5 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spf13/afero v1.11.0 // indirect

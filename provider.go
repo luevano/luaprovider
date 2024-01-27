@@ -126,19 +126,19 @@ func (p *provider) SearchMangas(
 		func(i int, table *lua.LTable) (libmangal.Manga, error) {
 			var manga luaManga
 			if err := glMapper.Map(table, &manga); err != nil {
-				return luaManga{}, err
+				return &luaManga{}, err
 			}
 
 			if manga.ID == "" {
-				return luaManga{}, errors.New("id must be non-empty")
+				return &luaManga{}, errors.New("id must be non-empty")
 			}
 
 			if manga.Title == "" {
-				return luaManga{}, errors.New("title must be non-empty")
+				return &luaManga{}, errors.New("title must be non-empty")
 			}
 
 			manga.table = table
-			return manga, nil
+			return &manga, nil
 		},
 		luaString(query),
 	)
@@ -148,12 +148,12 @@ func (p *provider) MangaVolumes(
 	ctx context.Context,
 	manga libmangal.Manga,
 ) ([]libmangal.Volume, error) {
-	m, ok := manga.(luaManga)
+	m, ok := manga.(*luaManga)
 	if !ok {
 		return nil, fmt.Errorf("unexpected manga type: %T", manga)
 	}
 
-	return p.mangaVolumes(ctx, m)
+	return p.mangaVolumes(ctx, *m)
 }
 
 func (p *provider) mangaVolumes(
@@ -171,7 +171,7 @@ func (p *provider) mangaVolumes(
 			var volume luaVolume
 
 			if err := glMapper.Map(table, &volume); err != nil {
-				return luaVolume{}, err
+				return &luaVolume{}, err
 			}
 
 			// Mangadex uses "none" as "un-volumed" chapters, which is set to 0 to be usable
@@ -189,9 +189,9 @@ func (p *provider) mangaVolumes(
 			table.RawSetString("manga", manga.table)
 			volume.table = table
 			volume.manga = &manga
-			return volume, nil
+			return &volume, nil
 		},
-		manga,
+		&manga,
 	)
 }
 
@@ -199,12 +199,12 @@ func (p *provider) VolumeChapters(
 	ctx context.Context,
 	volume libmangal.Volume,
 ) ([]libmangal.Chapter, error) {
-	v, ok := volume.(luaVolume)
+	v, ok := volume.(*luaVolume)
 	if !ok {
 		return nil, fmt.Errorf("unexpected volume type: %T", volume)
 	}
 
-	return p.volumeChapters(ctx, v)
+	return p.volumeChapters(ctx, *v)
 }
 
 func (p *provider) volumeChapters(
@@ -221,11 +221,11 @@ func (p *provider) volumeChapters(
 		func(i int, table *lua.LTable) (libmangal.Chapter, error) {
 			var chapter luaChapter
 			if err := glMapper.Map(table, &chapter); err != nil {
-				return luaChapter{}, err
+				return &luaChapter{}, err
 			}
 
 			if chapter.Title == "" {
-				return luaChapter{}, errors.New("title must be non-empty")
+				return &luaChapter{}, errors.New("title must be non-empty")
 			}
 
 			if chapter.Number == 0 {
@@ -236,9 +236,9 @@ func (p *provider) volumeChapters(
 			table.RawSetString("volume", volume.table)
 			chapter.table = table
 			chapter.volume = &volume
-			return chapter, nil
+			return &chapter, nil
 		},
-		volume,
+		&volume,
 	)
 }
 
@@ -246,12 +246,12 @@ func (p *provider) ChapterPages(
 	ctx context.Context,
 	chapter libmangal.Chapter,
 ) ([]libmangal.Page, error) {
-	c, ok := chapter.(luaChapter)
+	c, ok := chapter.(*luaChapter)
 	if !ok {
 		return nil, fmt.Errorf("unexpected chapter type: %T", chapter)
 	}
 
-	return p.chapterPages(ctx, c)
+	return p.chapterPages(ctx, *c)
 }
 
 func (p *provider) chapterPages(
@@ -268,13 +268,13 @@ func (p *provider) chapterPages(
 		func(i int, table *lua.LTable) (libmangal.Page, error) {
 			var page luaPage
 			if err := glMapper.Map(table, &page); err != nil {
-				return luaPage{}, err
+				return &luaPage{}, err
 			}
 
 			page.chapter = &chapter
 
 			if page.URL == "" {
-				return luaPage{}, errors.New("url must be set")
+				return &luaPage{}, errors.New("url must be set")
 			}
 
 			if page.Extension == "" {
@@ -282,7 +282,7 @@ func (p *provider) chapterPages(
 			}
 
 			if !fileExtensionRegex.MatchString(page.Extension) {
-				return luaPage{}, fmt.Errorf("invalid page extension: %s", page.Extension)
+				return &luaPage{}, fmt.Errorf("invalid page extension: %s", page.Extension)
 			}
 
 			if page.Headers == nil {
@@ -294,9 +294,9 @@ func (p *provider) chapterPages(
 				page.Headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
 			}
 
-			return page, nil
+			return &page, nil
 		},
-		chapter,
+		&chapter,
 	)
 }
 
@@ -304,12 +304,12 @@ func (p *provider) GetPageImage(
 	ctx context.Context,
 	page libmangal.Page,
 ) ([]byte, error) {
-	page_, ok := page.(luaPage)
+	page_, ok := page.(*luaPage)
 	if !ok {
 		return nil, fmt.Errorf("unexpected page type: %T", page)
 	}
 
-	return p.getPageImage(ctx, page_)
+	return p.getPageImage(ctx, *page_)
 }
 
 func (p *provider) getPageImage(

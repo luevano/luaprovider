@@ -22,23 +22,23 @@ type luaChapter struct {
 	table  *lua.LTable
 }
 
-func (c luaChapter) String() string {
+func (c *luaChapter) String() string {
 	return c.Title
 }
 
-func (c luaChapter) Volume() libmangal.Volume {
+func (c *luaChapter) Volume() libmangal.Volume {
 	return c.volume
 }
 
-func (c luaChapter) IntoLValue() lua.LValue {
+func (c *luaChapter) IntoLValue() lua.LValue {
 	return c.table
 }
 
-func (c luaChapter) MarshalJSON() ([]byte, error) {
+func (c *luaChapter) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.Info())
 }
 
-func (c luaChapter) Info() libmangal.ChapterInfo {
+func (c *luaChapter) Info() libmangal.ChapterInfo {
 	today := time.Now()
 	date := libmangal.Date{
 		Year:  today.Year(),

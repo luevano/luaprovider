@@ -16,23 +16,23 @@ type luaVolume struct {
 	table *lua.LTable
 }
 
-func (v luaVolume) String() string {
+func (v *luaVolume) String() string {
 	return strconv.Itoa(v.Number)
 }
 
-func (v luaVolume) Manga() libmangal.Manga {
+func (v *luaVolume) Manga() libmangal.Manga {
 	return v.manga
 }
 
-func (v luaVolume) IntoLValue() lua.LValue {
+func (v *luaVolume) IntoLValue() lua.LValue {
 	return v.table
 }
 
-func (v luaVolume) MarshalJSON() ([]byte, error) {
+func (v *luaVolume) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.Info())
 }
 
-func (v luaVolume) Info() libmangal.VolumeInfo {
+func (v *luaVolume) Info() libmangal.VolumeInfo {
 	return libmangal.VolumeInfo{
 		Number: v.Number,
 	}

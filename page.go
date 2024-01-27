@@ -21,14 +21,14 @@ type luaPage struct {
 	chapter *luaChapter
 }
 
-func (p luaPage) String() string {
+func (p *luaPage) String() string {
 	return p.URL
 }
 
-func (p luaPage) Chapter() libmangal.Chapter {
+func (p *luaPage) Chapter() libmangal.Chapter {
 	return p.chapter
 }
 
-func (p luaPage) GetExtension() string {
+func (p *luaPage) GetExtension() string {
 	return p.Extension
 }
