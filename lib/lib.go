@@ -18,21 +18,18 @@ import (
 	"github.com/luevano/luaprovider/lib/util"
 	"github.com/philippgille/gokv"
 	"github.com/philippgille/gokv/syncmap"
-	"github.com/spf13/afero"
 	lua "github.com/yuin/gopher-lua"
 )
 
 type Options struct {
 	HTTPClient *http.Client
 	HTTPStore  gokv.Store
-	FS         afero.Fs
 }
 
 func DefaultOptions() *Options {
 	return &Options{
 		HTTPClient: &http.Client{},
 		HTTPStore:  syncmap.NewStore(syncmap.DefaultOptions),
-		FS:         afero.NewMemMapFs(),
 	}
 }
 
@@ -54,7 +51,7 @@ func Lib(L *lua.LState, options *Options) *luadoc.Lib {
 			urls.Lib(),
 			encoding.Lib(L),
 			headless.Lib(),
-			httpLib.Lib(httpLib.LibOptions{
+			httpLib.Lib(httpLib.Options{
 				HTTPClient: options.HTTPClient,
 				HTTPStore:  options.HTTPStore,
 			}),

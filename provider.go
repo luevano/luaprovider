@@ -174,9 +174,10 @@ func (p *provider) mangaVolumes(
 				return luaVolume{}, err
 			}
 
-			if volume.Number <= 0 {
-				return luaVolume{}, fmt.Errorf("invalid volume number: %d", volume.Number)
-			}
+			// Mangadex uses "none" as "un-volumed" chapters, which is set to 0 to be usable
+			// if volume.Number <= 0 {
+			// 	return luaVolume{}, fmt.Errorf("invalid volume number: %d", volume.Number)
+			// }
 
 			// TODO: do this right?
 			// this gives the :manga() function to volume
@@ -289,7 +290,7 @@ func (p *provider) chapterPages(
 				page.Headers["Referer"] = page.chapter.URL
 				page.Headers["Accept"] = "image/webp,image/apng,image/*,*/*;q=0.8"
 
-				// TODO: generate random user-agent
+				// TODO: generate random user-agent?
 				page.Headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
 			}
 

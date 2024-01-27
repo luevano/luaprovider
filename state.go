@@ -30,7 +30,7 @@ func newState(options Options, providerID string) (*lua.LState, gokv.Store, erro
 		injectLib(state)
 	}
 
-	store, err := options.HTTPStoreProvider(providerID)
+	store, err := options.HTTPStore(providerID)
 	if err != nil {
 		return nil, nil, err
 	}

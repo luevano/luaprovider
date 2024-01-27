@@ -4,25 +4,26 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/luevano/libmangal"
 	"github.com/philippgille/gokv"
 	"github.com/philippgille/gokv/syncmap"
 	lua "github.com/yuin/gopher-lua"
-	"net/http"
 )
 
 var _ libmangal.ProviderLoader = (*loader)(nil)
 
 type Options struct {
-	HTTPClient        *http.Client
-	HTTPStoreProvider func(providerID string) (gokv.Store, error)
-	PackagePaths      []string
+	HTTPClient   *http.Client
+	HTTPStore    func(providerID string) (gokv.Store, error)
+	PackagePaths []string
 }
 
 func DefaultOptions() Options {
 	return Options{
 		HTTPClient: &http.Client{},
-		HTTPStoreProvider: func(providerID string) (gokv.Store, error) {
+		HTTPStore: func(providerID string) (gokv.Store, error) {
 			return syncmap.NewStore(syncmap.DefaultOptions), nil
 		},
 	}

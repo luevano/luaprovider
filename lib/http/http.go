@@ -10,12 +10,12 @@ import (
 
 const libName = "http"
 
-type LibOptions struct {
+type Options struct {
 	HTTPClient *http.Client
 	HTTPStore  gokv.Store
 }
 
-func Lib(options LibOptions) *luadoc.Lib {
+func Lib(options Options) *luadoc.Lib {
 	classRequest := &luadoc.Class{
 		Name:        requestTypeName,
 		Description: "HTTP Request",
