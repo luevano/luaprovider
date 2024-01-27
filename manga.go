@@ -2,6 +2,7 @@ package luaprovider
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/luevano/libmangal"
 	lua "github.com/yuin/gopher-lua"
@@ -48,8 +49,12 @@ func (m *luaManga) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m.Info())
 }
 
-func (m *luaManga) AnilistManga() (libmangal.AnilistManga, bool) {
-	return m.Anilist_, m.AnilistSet_
+func (m *luaManga) AnilistManga() (libmangal.AnilistManga, error) {
+	if m.AnilistSet_ {
+		return m.Anilist_, nil
+	} else {
+		return libmangal.AnilistManga{}, fmt.Errorf("AnilistManga is not set")
+	}
 }
 
 func (m *luaManga) SetAnilistManga(anilist libmangal.AnilistManga) {
