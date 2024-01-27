@@ -103,6 +103,30 @@ func Lib() *luadoc.Lib {
 				},
 			},
 			{
+				Name:        "join",
+				Description: "Concatenates the elems to create a single string. The sep is placed between elements in the resulting string.",
+				Value:       join,
+				Params: []*luadoc.Param{
+					{
+						Name:        "elems",
+						Description: "The elements to concatenate.",
+						Type:        luadoc.Table,
+					},
+					{
+						Name:        "sep",
+						Description: "The separation between elements.",
+						Type:        luadoc.String,
+					},
+				},
+				Returns: []*luadoc.Param{
+					{
+						Name:        "s",
+						Description: "The concatenated string.",
+						Type:        luadoc.String,
+					},
+				},
+			},
+			{
 				Name:        "to_lower",
 				Description: "Returns a copy of the string s with all Unicode letters mapped to their lower case.",
 				Value:       toLower,
@@ -615,6 +639,19 @@ func split(L *lua.LState) int {
 	sep := L.CheckString(2)
 
 	table, _ := util.ToLValue(L, strings.Split(s, sep))
+	L.Push(table)
+	return 1
+}
+
+func join(L *lua.LState) int {
+	elemsTable := L.CheckTable(1)
+	var elems []string
+	elemsTable.ForEach(func(_, value lua.LValue) {
+		elems = append(elems, value.String())
+	})
+	sep := L.CheckString(2)
+
+	table, _ := util.ToLValue(L, strings.Join(elems, sep))
 	L.Push(table)
 	return 1
 }
