@@ -12,14 +12,19 @@ func pageElement(state *lua.LState) int {
 	page := util.Check[*rod.Page](state, 1)
 	selector := state.CheckString(2)
 
-	element, err := page.Element(selector)
-	if err != nil {
-		state.RaiseError(err.Error())
-		return 0
+	var element *rod.Element
+	var err error
+	if page.MustHas(selector) {
+		element, err = page.Element(selector)
+		if err != nil {
+			state.RaiseError(err.Error())
+			return 0
+		}
+		util.Push(state, element, elementTypeName)
+		return 1
 	}
 
-	util.Push(state, element, elementTypeName)
-	return 1
+	return 0
 }
 
 func pageNavigate(state *lua.LState) int {
