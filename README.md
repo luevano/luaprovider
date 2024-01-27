@@ -1,6 +1,7 @@
 <div align="center">
   <img width="150px" alt="a logo depicting a moon" src="moon.png">
   <h1>Lua Provider</h1>
+  <a href="https://pkg.go.dev/github.com/luevano/luaprovider"><img src="https://pkg.go.dev/badge/github.com/luevano/luaprovider.svg" alt="Go Reference"></a>
 </div>
 
 > **Warning**
