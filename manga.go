@@ -7,7 +7,10 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-var _ libmangal.Manga = (*luaManga)(nil)
+var (
+	_ libmangal.MangaWithSeriesJSON = (*luaManga)(nil)
+	_ libmangal.Manga               = (*luaManga)(nil)
+)
 
 type luaManga struct {
 	Title         string `gluamapper:"title"`
@@ -17,8 +20,9 @@ type luaManga struct {
 	Cover         string `gluamapper:"cover"`
 	Banner        string `gluamapper:"banner"`
 
-	Anilist_    *libmangal.AnilistManga
-	table      *lua.LTable
+	AnilistSet_ bool                   `gluamapper:"-"`
+	Anilist_    libmangal.AnilistManga `gluamapper:"-"`
+	table       *lua.LTable
 }
 
 func (m *luaManga) String() string {
@@ -45,9 +49,20 @@ func (m *luaManga) MarshalJSON() ([]byte, error) {
 }
 
 func (m *luaManga) AnilistManga() (libmangal.AnilistManga, bool) {
-	return *m.Anilist_, m.Anilist_ != nil
+	return m.Anilist_, m.AnilistSet_
 }
 
 func (m *luaManga) SetAnilistManga(anilist libmangal.AnilistManga) {
-	m.Anilist_ = &anilist
+	m.Anilist_ = anilist
+	m.AnilistSet_ = true
+}
+
+func (m *luaManga) SeriesJSON() (libmangal.SeriesJSON, bool, error) {
+	if !m.AnilistSet_ {
+		// TODO: once logger is setup, use it
+		// Log(fmt.Sprintf("manga %q doesn't contain anilist data", m.Title))
+		return libmangal.SeriesJSON{}, false, nil
+	}
+
+	return libmangal.AnilistSeriesJSON(m.Anilist_), true, nil
 }
