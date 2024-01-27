@@ -1,7 +1,6 @@
 # Lua Provider Gen
 
-A utility tool to generate lua script
-based on the template
+A utility tool to generate lua script based on templates.
 
 ## Install
 

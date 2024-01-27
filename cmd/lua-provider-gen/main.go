@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
-	"github.com/luevano/luaprovider"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/luevano/luaprovider"
 )
 
 const (
@@ -32,7 +33,7 @@ func main() {
 		err := os.WriteFile(
 			filepath.Join(*dir, filenameSDK),
 			[]byte(luaprovider.LuaDoc()),
-			0655,
+			0644,
 		)
 		if err != nil {
 			log.Fatal(err)
@@ -43,7 +44,7 @@ func main() {
 		err := os.WriteFile(
 			filepath.Join(*dir, filenameProvider),
 			[]byte(luaprovider.LuaTemplate()),
-			0655,
+			0644,
 		)
 		if err != nil {
 			log.Fatal(err)
@@ -54,7 +55,7 @@ func main() {
 		err := os.WriteFile(
 			filepath.Join(*dir, filenameLuarcJSON),
 			[]byte(luaprovider.LuarcJSON()),
-			0655,
+			0644,
 		)
 		if err != nil {
 			log.Fatal(err)
