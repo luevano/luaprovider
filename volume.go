@@ -2,22 +2,23 @@ package luaprovider
 
 import (
 	"encoding/json"
+	"strconv"
+
 	"github.com/luevano/libmangal"
 	lua "github.com/yuin/gopher-lua"
-	"strconv"
 )
 
 var _ libmangal.Volume = (*luaVolume)(nil)
 
 type luaVolume struct {
-	Number int `gluamapper:"number"`
+	Number float32 `gluamapper:"number"`
 
 	manga *luaManga
 	table *lua.LTable
 }
 
 func (v *luaVolume) String() string {
-	return strconv.Itoa(v.Number)
+	return strconv.FormatFloat(float64(v.Number), 'f', -1, 32)
 }
 
 func (v *luaVolume) Manga() libmangal.Manga {
