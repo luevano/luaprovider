@@ -34,10 +34,10 @@ github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3x
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
-github.com/luevano/gopher-luadoc v0.3.1 h1:+XvV+VbWXy1b4dnddoQS65WG6Hq6+HAjG5aATU4XtFI=
-github.com/luevano/gopher-luadoc v0.3.1/go.mod h1:0jxRplOdnRq/tJ49bYWS/JBAtx/cXzCPb0MJ7E/8mFA=
-github.com/luevano/libmangal v0.13.0 h1:I68gAM7ciFziNCiBkg8dT4unRVE1Xl+9heMAePLIClQ=
-github.com/luevano/libmangal v0.13.0/go.mod h1:AG8fCCiQ3KWUVhtw6WWbkNLV2CKHFEwB61zCO0M9xQo=
+github.com/luevano/gopher-luadoc v0.3.2 h1:BHzm127Jf7Ahdgpsv08+FuCidR/FoJnO+XshDnkXHSc=
+github.com/luevano/gopher-luadoc v0.3.2/go.mod h1:snD8uzIolxUBIOgAes00sOW7GWpBwqcMq7rngE/a6P0=
+github.com/luevano/libmangal v0.14.1 h1:fSwteike5EZhHh7oynIgewnGumYfgfEqxj3EBSqWDlQ=
+github.com/luevano/libmangal v0.14.1/go.mod h1:nJUdEwVRubNf84wH2k7ZuCymYM0WuBqSQhxQqqJStgY=
 github.com/mattn/go-runewidth v0.0.15 h1:UNAjwbU9l54TA3KzvqLGxwWjHmMgBUVhBiTjelZgg3U=
 github.com/mattn/go-runewidth v0.0.15/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=

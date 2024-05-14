@@ -1,6 +1,6 @@
 module github.com/luevano/luaprovider
 
-go 1.21
+go 1.22
 
 require (
 	github.com/JohannesKaufmann/html-to-markdown v1.5.0
@@ -8,8 +8,8 @@ require (
 	github.com/cixtor/readability v1.0.0
 	github.com/go-rod/rod v0.116.0
 	github.com/ka-weihe/fast-levenshtein v0.0.0-20201227151214-4c99ee36a1ba
-	github.com/luevano/gopher-luadoc v0.3.1
-	github.com/luevano/libmangal v0.13.0
+	github.com/luevano/gopher-luadoc v0.3.2
+	github.com/luevano/libmangal v0.14.1
 	github.com/mvdan/xurls v1.1.0
 	github.com/philippgille/gokv v0.7.0
 	github.com/philippgille/gokv/syncmap v0.7.0
