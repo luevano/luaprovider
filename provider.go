@@ -289,11 +289,12 @@ func (p *provider) chapterPages(
 				page.Headers = make(map[string]string)
 				page.Headers["Referer"] = page.chapter.URL
 				page.Headers["Accept"] = "image/webp,image/apng,image/*,*/*;q=0.8"
-
-				// TODO: generate random user-agent?
-				page.Headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+				if p.options.UserAgent != "" {
+					page.Headers["User-Agent"] = p.options.UserAgent
+				} else {
+					page.Headers["User-Agent"] = defaultUserAgent
+				}
 			}
-
 			return &page, nil
 		},
 		&chapter,

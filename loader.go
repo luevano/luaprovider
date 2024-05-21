@@ -12,10 +12,13 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
+const defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0"
+
 var _ libmangal.ProviderLoader = (*loader)(nil)
 
 type Options struct {
 	HTTPClient   *http.Client
+	UserAgent    string
 	HTTPStore    func(providerID string) (gokv.Store, error)
 	PackagePaths []string
 }
@@ -23,6 +26,7 @@ type Options struct {
 func DefaultOptions() Options {
 	return Options{
 		HTTPClient: &http.Client{},
+		UserAgent:  defaultUserAgent,
 		HTTPStore: func(providerID string) (gokv.Store, error) {
 			return syncmap.NewStore(syncmap.DefaultOptions), nil
 		},
