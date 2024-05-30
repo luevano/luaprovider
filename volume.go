@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
 	lua "github.com/yuin/gopher-lua"
 )
 
-var _ libmangal.Volume = (*luaVolume)(nil)
+var _ mangadata.Volume = (*luaVolume)(nil)
 
 type luaVolume struct {
 	Number float32 `gluamapper:"number"`
@@ -21,7 +21,7 @@ func (v *luaVolume) String() string {
 	return strconv.FormatFloat(float64(v.Number), 'f', -1, 32)
 }
 
-func (v *luaVolume) Manga() libmangal.Manga {
+func (v *luaVolume) Manga() mangadata.Manga {
 	return v.manga
 }
 
@@ -33,8 +33,8 @@ func (v *luaVolume) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.Info())
 }
 
-func (v *luaVolume) Info() libmangal.VolumeInfo {
-	return libmangal.VolumeInfo{
+func (v *luaVolume) Info() mangadata.VolumeInfo {
+	return mangadata.VolumeInfo{
 		Number: v.Number,
 	}
 }

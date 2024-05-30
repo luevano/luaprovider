@@ -1,16 +1,17 @@
 package luaprovider
 
 import (
-	"github.com/luevano/libmangal"
 	"regexp"
+
+	"github.com/luevano/libmangal/mangadata"
 )
 
 var fileExtensionRegex = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0-9]$`)
 
-var _ libmangal.Page = (*luaPage)(nil)
+var _ mangadata.Page = (*luaPage)(nil)
 
 type luaPage struct {
-	Extension string `json:"extension" gluamapper:"extension"`
+	Ext string `json:"extension" gluamapper:"extension"`
 
 	// URL is the url of the page image
 	URL string `json:"url" gluamapper:"url"`
@@ -25,10 +26,10 @@ func (p *luaPage) String() string {
 	return p.URL
 }
 
-func (p *luaPage) Chapter() libmangal.Chapter {
+func (p *luaPage) Chapter() mangadata.Chapter {
 	return p.chapter
 }
 
-func (p *luaPage) GetExtension() string {
-	return p.Extension
+func (p *luaPage) Extension() string {
+	return p.Ext
 }

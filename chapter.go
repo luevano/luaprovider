@@ -4,19 +4,19 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/metadata"
 	lua "github.com/yuin/gopher-lua"
 )
 
-var _ libmangal.Chapter = (*luaChapter)(nil)
+var _ mangadata.Chapter = (*luaChapter)(nil)
 
 type luaChapter struct {
-	Title  string  `gluamapper:"title"`
-	URL    string  `gluamapper:"url"`
-	Number float32 `gluamapper:"number"`
-	// Date should be in the format "YYYY-MM-dd" or empty.
-	Date            string `gluamapper:"date"`
-	ScanlationGroup string `gluamapper:"scanlation_group"`
+	Title           string  `gluamapper:"title"`
+	URL             string  `gluamapper:"url"`
+	Number          float32 `gluamapper:"number"`
+	Date            string  `gluamapper:"date"` // fmt "YYYY-MM-dd" or empty
+	ScanlationGroup string  `gluamapper:"scanlation_group"`
 
 	volume *luaVolume
 	table  *lua.LTable
@@ -26,7 +26,7 @@ func (c *luaChapter) String() string {
 	return c.Title
 }
 
-func (c *luaChapter) Volume() libmangal.Volume {
+func (c *luaChapter) Volume() mangadata.Volume {
 	return c.volume
 }
 
@@ -38,9 +38,9 @@ func (c *luaChapter) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.Info())
 }
 
-func (c *luaChapter) Info() libmangal.ChapterInfo {
+func (c *luaChapter) Info() mangadata.ChapterInfo {
 	today := time.Now()
-	date := libmangal.Date{
+	date := metadata.Date{
 		Year:  today.Year(),
 		Month: int(today.Month()),
 		Day:   today.Day(),
@@ -54,7 +54,7 @@ func (c *luaChapter) Info() libmangal.ChapterInfo {
 			date.Day = parsedDate.Day()
 		}
 	}
-	return libmangal.ChapterInfo{
+	return mangadata.ChapterInfo{
 		Title:           c.Title,
 		URL:             c.URL,
 		Number:          c.Number,

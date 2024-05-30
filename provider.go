@@ -7,6 +7,8 @@ import (
 	"net/http"
 
 	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/logger"
+	"github.com/luevano/libmangal/mangadata"
 	"github.com/philippgille/gokv"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
@@ -21,7 +23,7 @@ type provider struct {
 	info    libmangal.ProviderInfo
 	options Options
 	state   *lua.LState
-	logger  *libmangal.Logger
+	logger  *logger.Logger
 
 	fnSearchMangas,
 	fnMangaVolumes,
@@ -50,7 +52,7 @@ type IntoLValue interface {
 // perform type checking and apply conversion function for each item.
 func loadItems[Input IntoLValue, Output any](
 	ctx context.Context,
-	logger *libmangal.Logger,
+	logger *logger.Logger,
 	state *lua.LState,
 	lfunc *lua.LFunction,
 	convert func(int, *lua.LTable) (Output, error),
@@ -103,7 +105,7 @@ func (l luaString) IntoLValue() lua.LValue {
 	return lua.LString(l)
 }
 
-func (p *provider) SetLogger(logger *libmangal.Logger) {
+func (p *provider) SetLogger(logger *logger.Logger) {
 	p.logger = logger
 }
 
@@ -115,7 +117,7 @@ var (
 func (p *provider) SearchMangas(
 	ctx context.Context,
 	query string,
-) ([]libmangal.Manga, error) {
+) ([]mangadata.Manga, error) {
 	p.logger.Log(fmt.Sprintf("Searching mangas with %q", query))
 
 	return loadItems(
@@ -123,7 +125,7 @@ func (p *provider) SearchMangas(
 		p.logger,
 		p.state,
 		p.fnSearchMangas,
-		func(i int, table *lua.LTable) (libmangal.Manga, error) {
+		func(i int, table *lua.LTable) (mangadata.Manga, error) {
 			var manga luaManga
 			if err := glMapper.Map(table, &manga); err != nil {
 				return &luaManga{}, err
@@ -146,8 +148,8 @@ func (p *provider) SearchMangas(
 
 func (p *provider) MangaVolumes(
 	ctx context.Context,
-	manga libmangal.Manga,
-) ([]libmangal.Volume, error) {
+	manga mangadata.Manga,
+) ([]mangadata.Volume, error) {
 	m, ok := manga.(*luaManga)
 	if !ok {
 		return nil, fmt.Errorf("unexpected manga type: %T", manga)
@@ -159,7 +161,7 @@ func (p *provider) MangaVolumes(
 func (p *provider) mangaVolumes(
 	ctx context.Context,
 	manga luaManga,
-) ([]libmangal.Volume, error) {
+) ([]mangadata.Volume, error) {
 	p.logger.Log(fmt.Sprintf("Fetching volumes for %q", manga.Title))
 
 	return loadItems(
@@ -167,7 +169,7 @@ func (p *provider) mangaVolumes(
 		p.logger,
 		p.state,
 		p.fnMangaVolumes,
-		func(_ int, table *lua.LTable) (libmangal.Volume, error) {
+		func(_ int, table *lua.LTable) (mangadata.Volume, error) {
 			var volume luaVolume
 
 			if err := glMapper.Map(table, &volume); err != nil {
@@ -197,8 +199,8 @@ func (p *provider) mangaVolumes(
 
 func (p *provider) VolumeChapters(
 	ctx context.Context,
-	volume libmangal.Volume,
-) ([]libmangal.Chapter, error) {
+	volume mangadata.Volume,
+) ([]mangadata.Chapter, error) {
 	v, ok := volume.(*luaVolume)
 	if !ok {
 		return nil, fmt.Errorf("unexpected volume type: %T", volume)
@@ -210,7 +212,7 @@ func (p *provider) VolumeChapters(
 func (p *provider) volumeChapters(
 	ctx context.Context,
 	volume luaVolume,
-) ([]libmangal.Chapter, error) {
+) ([]mangadata.Chapter, error) {
 	p.logger.Log(fmt.Sprintf("Fetching chapters for volume %d", volume.Number))
 
 	return loadItems(
@@ -218,7 +220,7 @@ func (p *provider) volumeChapters(
 		p.logger,
 		p.state,
 		p.fnVolumeChapters,
-		func(i int, table *lua.LTable) (libmangal.Chapter, error) {
+		func(i int, table *lua.LTable) (mangadata.Chapter, error) {
 			var chapter luaChapter
 			if err := glMapper.Map(table, &chapter); err != nil {
 				return &luaChapter{}, err
@@ -244,8 +246,8 @@ func (p *provider) volumeChapters(
 
 func (p *provider) ChapterPages(
 	ctx context.Context,
-	chapter libmangal.Chapter,
-) ([]libmangal.Page, error) {
+	chapter mangadata.Chapter,
+) ([]mangadata.Page, error) {
 	c, ok := chapter.(*luaChapter)
 	if !ok {
 		return nil, fmt.Errorf("unexpected chapter type: %T", chapter)
@@ -257,7 +259,7 @@ func (p *provider) ChapterPages(
 func (p *provider) chapterPages(
 	ctx context.Context,
 	chapter luaChapter,
-) ([]libmangal.Page, error) {
+) ([]mangadata.Page, error) {
 	p.logger.Log(fmt.Sprintf("Fetching pages for %q", chapter.Title))
 
 	return loadItems(
@@ -265,7 +267,7 @@ func (p *provider) chapterPages(
 		p.logger,
 		p.state,
 		p.fnChapterPages,
-		func(i int, table *lua.LTable) (libmangal.Page, error) {
+		func(i int, table *lua.LTable) (mangadata.Page, error) {
 			var page luaPage
 			if err := glMapper.Map(table, &page); err != nil {
 				return &luaPage{}, err
@@ -277,12 +279,12 @@ func (p *provider) chapterPages(
 				return &luaPage{}, errors.New("url must be set")
 			}
 
-			if page.Extension == "" {
-				page.Extension = ".jpg"
+			if page.Ext == "" {
+				page.Ext = ".jpg"
 			}
 
-			if !fileExtensionRegex.MatchString(page.Extension) {
-				return &luaPage{}, fmt.Errorf("invalid page extension: %s", page.Extension)
+			if !fileExtensionRegex.MatchString(page.Ext) {
+				return &luaPage{}, fmt.Errorf("invalid page extension: %s", page.Ext)
 			}
 
 			if page.Headers == nil {
@@ -303,7 +305,7 @@ func (p *provider) chapterPages(
 
 func (p *provider) GetPageImage(
 	ctx context.Context,
-	page libmangal.Page,
+	page mangadata.Page,
 ) ([]byte, error) {
 	page_, ok := page.(*luaPage)
 	if !ok {

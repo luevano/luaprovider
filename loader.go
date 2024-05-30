@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/luevano/libmangal"
+	lm "github.com/luevano/libmangal"
 	"github.com/philippgille/gokv"
 	"github.com/philippgille/gokv/syncmap"
 	lua "github.com/yuin/gopher-lua"
@@ -14,7 +14,7 @@ import (
 
 const defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0"
 
-var _ libmangal.ProviderLoader = (*loader)(nil)
+var _ lm.ProviderLoader = (*loader)(nil)
 
 type Options struct {
 	HTTPClient   *http.Client
@@ -36,7 +36,7 @@ func DefaultOptions() Options {
 // NewLoader creates new lua provider loader for the given script.
 //
 // It won't run the script itself.
-func NewLoader(script []byte, info libmangal.ProviderInfo, options Options) (libmangal.ProviderLoader, error) {
+func NewLoader(script []byte, info lm.ProviderInfo, options Options) (lm.ProviderLoader, error) {
 	if err := info.Validate(); err != nil {
 		return nil, err
 	}
@@ -50,11 +50,11 @@ func NewLoader(script []byte, info libmangal.ProviderInfo, options Options) (lib
 
 type loader struct {
 	options Options
-	info    libmangal.ProviderInfo
+	info    lm.ProviderInfo
 	script  []byte
 }
 
-func (l loader) Info() libmangal.ProviderInfo {
+func (l loader) Info() lm.ProviderInfo {
 	return l.info
 }
 
@@ -62,7 +62,7 @@ func (l loader) String() string {
 	return l.info.Name
 }
 
-func (l loader) Load(ctx context.Context) (libmangal.Provider, error) {
+func (l loader) Load(ctx context.Context) (lm.Provider, error) {
 	provider := &provider{
 		info:    l.info,
 		options: l.options,

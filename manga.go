@@ -2,16 +2,13 @@ package luaprovider
 
 import (
 	"encoding/json"
-	"fmt"
 
-	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/metadata"
 	lua "github.com/yuin/gopher-lua"
 )
 
-var (
-	_ libmangal.MangaWithSeriesJSON = (*luaManga)(nil)
-	_ libmangal.Manga               = (*luaManga)(nil)
-)
+var _ mangadata.Manga = (*luaManga)(nil)
 
 type luaManga struct {
 	Title         string `gluamapper:"title"`
@@ -21,9 +18,8 @@ type luaManga struct {
 	Cover         string `gluamapper:"cover"`
 	Banner        string `gluamapper:"banner"`
 
-	AnilistSet_ bool                   `gluamapper:"-"`
-	Anilist_    libmangal.AnilistManga `gluamapper:"-"`
-	table       *lua.LTable
+	metadata *metadata.Metadata
+	table    *lua.LTable
 }
 
 func (m *luaManga) String() string {
@@ -34,8 +30,8 @@ func (m *luaManga) IntoLValue() lua.LValue {
 	return m.table
 }
 
-func (m *luaManga) Info() libmangal.MangaInfo {
-	return libmangal.MangaInfo{
+func (m *luaManga) Info() mangadata.MangaInfo {
+	return mangadata.MangaInfo{
 		Title:         m.Title,
 		AnilistSearch: m.AnilistSearch,
 		URL:           m.URL,
@@ -49,25 +45,10 @@ func (m *luaManga) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m.Info())
 }
 
-func (m *luaManga) AnilistManga() (libmangal.AnilistManga, error) {
-	if m.AnilistSet_ {
-		return m.Anilist_, nil
-	} else {
-		return libmangal.AnilistManga{}, fmt.Errorf("AnilistManga is not set")
-	}
+func (m *luaManga) Metadata() *metadata.Metadata {
+	return m.metadata
 }
 
-func (m *luaManga) SetAnilistManga(anilist libmangal.AnilistManga) {
-	m.Anilist_ = anilist
-	m.AnilistSet_ = true
-}
-
-func (m *luaManga) SeriesJSON() (libmangal.SeriesJSON, bool, error) {
-	if !m.AnilistSet_ {
-		// TODO: once logger is setup, use it
-		// Log(fmt.Sprintf("manga %q doesn't contain anilist data", m.Title))
-		return libmangal.SeriesJSON{}, false, nil
-	}
-
-	return m.Anilist_.SeriesJSON(), true, nil
+func (m *luaManga) SetMetadata(metadata *metadata.Metadata) {
+	m.metadata = metadata
 }
