@@ -50,5 +50,5 @@ func (m *luaManga) Metadata() *metadata.Metadata {
 }
 
 func (m *luaManga) SetMetadata(metadata *metadata.Metadata) {
-	m.metadata = metadata
+	*m.metadata = *metadata
 }
