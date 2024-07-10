@@ -9,6 +9,7 @@ import (
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/metadata"
 	"github.com/philippgille/gokv"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
@@ -139,6 +140,9 @@ func (p *provider) SearchMangas(
 				return &luaManga{}, errors.New("title must be non-empty")
 			}
 
+			// TODO: implement metadata logic, this is a temp fix for
+			// the nil pointer dereference on SetMetadata
+			manga.metadata = &metadata.Metadata{}
 			manga.table = table
 			return &manga, nil
 		},
