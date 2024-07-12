@@ -142,7 +142,8 @@ func (p *provider) SearchMangas(
 
 			// TODO: implement metadata logic, this is a temp fix for
 			// the nil pointer dereference on SetMetadata
-			manga.metadata = &metadata.Metadata{}
+			var meta metadata.Metadata = &mangadata.Metadata{}
+			manga.metadata = &meta
 			manga.table = table
 			return &manga, nil
 		},
