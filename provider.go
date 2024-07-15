@@ -24,7 +24,6 @@ type provider struct {
 	info    libmangal.ProviderInfo
 	options Options
 	state   *lua.LState
-	logger  *logger.Logger
 
 	fnSearchMangas,
 	fnMangaVolumes,
@@ -53,7 +52,6 @@ type IntoLValue interface {
 // perform type checking and apply conversion function for each item.
 func loadItems[Input IntoLValue, Output any](
 	ctx context.Context,
-	logger *logger.Logger,
 	state *lua.LState,
 	lfunc *lua.LFunction,
 	convert func(int, *lua.LTable) (Output, error),
@@ -80,7 +78,6 @@ func loadItems[Input IntoLValue, Output any](
 
 	items := make([]Output, len(values))
 	for i, value := range values {
-		logger.Log(fmt.Sprintf("Parsing item %d", i))
 		table, ok := value.(*lua.LTable)
 		if !ok {
 			return nil, errors.Wrapf(fmt.Errorf("expected table, got %s", value.Type().String()), "parsing item %d", i)
@@ -93,8 +90,6 @@ func loadItems[Input IntoLValue, Output any](
 
 		items[i] = item
 	}
-
-	logger.Log(fmt.Sprintf("Found %d items", len(items)))
 	return items, nil
 }
 
@@ -106,8 +101,13 @@ func (l luaString) IntoLValue() lua.LValue {
 	return lua.LString(l)
 }
 
-func (p *provider) SetLogger(logger *logger.Logger) {
-	p.logger = logger
+func (p *provider) SetLogger(newLogger *logger.Logger) {
+	prefix_ = p.info.ID + ": "
+	if logger_ == nil || newLogger == nil {
+		logger_ = newLogger
+	} else {
+		*logger_ = *newLogger
+	}
 }
 
 var (
@@ -119,11 +119,10 @@ func (p *provider) SearchMangas(
 	ctx context.Context,
 	query string,
 ) ([]mangadata.Manga, error) {
-	p.logger.Log(fmt.Sprintf("Searching mangas with %q", query))
+	Log("searching mangas with query %q", query)
 
 	return loadItems(
 		ctx,
-		p.logger,
 		p.state,
 		p.fnSearchMangas,
 		func(i int, table *lua.LTable) (mangadata.Manga, error) {
@@ -160,6 +159,7 @@ func (p *provider) MangaVolumes(
 		return nil, fmt.Errorf("unexpected manga type: %T", manga)
 	}
 
+	Log("fetching volumes for manga %q", m)
 	return p.mangaVolumes(ctx, *m)
 }
 
@@ -167,11 +167,8 @@ func (p *provider) mangaVolumes(
 	ctx context.Context,
 	manga luaManga,
 ) ([]mangadata.Volume, error) {
-	p.logger.Log(fmt.Sprintf("Fetching volumes for %q", manga.Title))
-
 	return loadItems(
 		ctx,
-		p.logger,
 		p.state,
 		p.fnMangaVolumes,
 		func(_ int, table *lua.LTable) (mangadata.Volume, error) {
@@ -211,6 +208,7 @@ func (p *provider) VolumeChapters(
 		return nil, fmt.Errorf("unexpected volume type: %T", volume)
 	}
 
+	Log("fetching chapters for volume %s", v.String())
 	return p.volumeChapters(ctx, *v)
 }
 
@@ -218,11 +216,8 @@ func (p *provider) volumeChapters(
 	ctx context.Context,
 	volume luaVolume,
 ) ([]mangadata.Chapter, error) {
-	p.logger.Log(fmt.Sprintf("Fetching chapters for volume %d", volume.Number))
-
 	return loadItems(
 		ctx,
-		p.logger,
 		p.state,
 		p.fnVolumeChapters,
 		func(i int, table *lua.LTable) (mangadata.Chapter, error) {
@@ -258,6 +253,7 @@ func (p *provider) ChapterPages(
 		return nil, fmt.Errorf("unexpected chapter type: %T", chapter)
 	}
 
+	Log("fetching pages for chapter %q", c)
 	return p.chapterPages(ctx, *c)
 }
 
@@ -265,11 +261,8 @@ func (p *provider) chapterPages(
 	ctx context.Context,
 	chapter luaChapter,
 ) ([]mangadata.Page, error) {
-	p.logger.Log(fmt.Sprintf("Fetching pages for %q", chapter.Title))
-
 	return loadItems(
 		ctx,
-		p.logger,
 		p.state,
 		p.fnChapterPages,
 		func(i int, table *lua.LTable) (mangadata.Page, error) {
@@ -324,7 +317,6 @@ func (p *provider) getPageImage(
 	ctx context.Context,
 	page luaPage,
 ) ([]byte, error) {
-	p.logger.Log(fmt.Sprintf("Making HTTP GET request for %q", page.URL))
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, page.URL, nil)
 	if err != nil {
 		return nil, err
@@ -343,8 +335,6 @@ func (p *provider) getPageImage(
 		return nil, err
 	}
 	defer response.Body.Close()
-
-	p.logger.Log("Got response")
 
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", response.StatusCode)
