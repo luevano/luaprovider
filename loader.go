@@ -16,10 +16,20 @@ const defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Ge
 
 var _ lm.ProviderLoader = (*loader)(nil)
 
+// TODO: use the cache store effectively like with mangoprovider
+
+// Options are the general luaprovider options.
 type Options struct {
-	HTTPClient   *http.Client
-	UserAgent    string
-	HTTPStore    func(providerID string) (gokv.Store, error)
+	// HTTPClient HTTP client to use for all requests.
+	HTTPClient *http.Client
+
+	// UserAgent to use for all HTTP requests.
+	UserAgent string
+
+	// CacheStore returns a gokv.Store implementation for use as a cache storage.
+	CacheStore func(dbName, bucketName string) (gokv.Store, error)
+
+	// PackagePaths is a list of optional extra package paths.
 	PackagePaths []string
 }
 
@@ -27,7 +37,7 @@ func DefaultOptions() Options {
 	return Options{
 		HTTPClient: &http.Client{},
 		UserAgent:  defaultUserAgent,
-		HTTPStore: func(providerID string) (gokv.Store, error) {
+		CacheStore: func(dbName, bucketName string) (gokv.Store, error) {
 			return syncmap.NewStore(syncmap.DefaultOptions), nil
 		},
 	}

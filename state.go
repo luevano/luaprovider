@@ -30,14 +30,16 @@ func newState(options Options, providerID string) (*lua.LState, gokv.Store, erro
 		injectLib(state)
 	}
 
-	store, err := options.HTTPStore(providerID)
+	// TODO: provide options to create buckets with different
+	// names (so one bucket for mangas, one for volumes, etc.)
+	store, err := options.CacheStore(providerID, providerID)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	lib.Preload(state, &lib.Options{
 		HTTPClient: options.HTTPClient,
-		HTTPStore:  store,
+		CacheStore: store,
 	})
 
 	pkg := state.GetGlobal("package").(*lua.LTable)

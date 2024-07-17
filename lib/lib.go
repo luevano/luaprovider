@@ -23,13 +23,13 @@ import (
 
 type Options struct {
 	HTTPClient *http.Client
-	HTTPStore  gokv.Store
+	CacheStore gokv.Store
 }
 
 func DefaultOptions() *Options {
 	return &Options{
 		HTTPClient: &http.Client{},
-		HTTPStore:  syncmap.NewStore(syncmap.DefaultOptions),
+		CacheStore: syncmap.NewStore(syncmap.DefaultOptions),
 	}
 }
 
@@ -53,7 +53,7 @@ func Lib(L *lua.LState, options *Options) *luadoc.Lib {
 			headless.Lib(),
 			httpLib.Lib(httpLib.Options{
 				HTTPClient: options.HTTPClient,
-				HTTPStore:  options.HTTPStore,
+				CacheStore: options.CacheStore,
 			}),
 		},
 	}

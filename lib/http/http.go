@@ -12,7 +12,7 @@ const libName = "http"
 
 type Options struct {
 	HTTPClient *http.Client
-	HTTPStore  gokv.Store
+	CacheStore gokv.Store
 }
 
 func Lib(options Options) *luadoc.Lib {
@@ -97,7 +97,7 @@ func Lib(options Options) *luadoc.Lib {
 				Name:        "send",
 				Description: "Perform request",
 				Value: func(L *lua.LState) int {
-					return requestSend(L, options.HTTPClient, options.HTTPStore)
+					return requestSend(L, options.HTTPClient, options.CacheStore)
 				},
 				Returns: []*luadoc.Param{
 					{
