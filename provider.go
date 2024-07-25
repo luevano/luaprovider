@@ -101,13 +101,9 @@ func (l luaString) IntoLValue() lua.LValue {
 	return lua.LString(l)
 }
 
-func (p *provider) SetLogger(newLogger *logger.Logger) {
+func (p *provider) SetLogger(logger *logger.Logger) {
 	prefix_ = p.info.ID + ": "
-	if logger_ == nil || newLogger == nil {
-		logger_ = newLogger
-	} else {
-		*logger_ = *newLogger
-	}
+	logger_ = logger
 }
 
 var (
