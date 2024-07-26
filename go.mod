@@ -9,7 +9,7 @@ require (
 	github.com/go-rod/rod v0.116.2
 	github.com/ka-weihe/fast-levenshtein v0.0.0-20201227151214-4c99ee36a1ba
 	github.com/luevano/gopher-luadoc v0.3.2
-	github.com/luevano/libmangal v0.19.1
+	github.com/luevano/libmangal v0.20.0
 	github.com/mvdan/xurls v1.1.0
 	github.com/philippgille/gokv v0.7.0
 	github.com/philippgille/gokv/syncmap v0.7.0
@@ -25,7 +25,7 @@ require (
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/hhrutter/lzw v1.0.0 // indirect
 	github.com/hhrutter/tiff v1.0.1 // indirect
-	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pdfcpu/pdfcpu v0.8.0 // indirect
 	github.com/philippgille/gokv/encoding v0.7.0 // indirect
