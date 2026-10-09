@@ -115,7 +115,7 @@ func decode(L *lua.LState) int {
 	encoding := L.OptUserData(2, encodingToLua(L, base64.StdEncoding)).Value.(*base64.Encoding)
 	decoded, err := encoding.DecodeString(value)
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 	L.Push(lua.LString(decoded))

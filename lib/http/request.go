@@ -25,7 +25,7 @@ func requestNew(L *lua.LState) int {
 		strings.NewReader(body),
 	)
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 	}
 
 	util.Push(L, request, requestTypeName)
@@ -116,7 +116,7 @@ func requestSend(L *lua.LState, client *http.Client, store gokv.Store) int {
 doRequest:
 	response, err := client.Do(request)
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 

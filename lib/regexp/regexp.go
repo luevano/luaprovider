@@ -238,7 +238,7 @@ func match(L *lua.LState) int {
 	text := L.CheckString(2)
 	matched, err := regexp.MatchString(pattern, text)
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 
@@ -250,7 +250,7 @@ func compile(L *lua.LState) int {
 	pattern := L.CheckString(1)
 	compiled, err := regexp.Compile(pattern)
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 

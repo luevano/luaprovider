@@ -368,7 +368,7 @@ func urlPathUnescape(L *lua.LState) int {
 	s := L.CheckString(1)
 	s, err := url.PathUnescape(s)
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 	L.Push(lua.LString(s))
@@ -385,7 +385,7 @@ func urlQueryUnescape(L *lua.LState) int {
 	s := L.CheckString(1)
 	s, err := url.QueryUnescape(s)
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 	L.Push(lua.LString(s))
@@ -430,7 +430,7 @@ func urlValuesParse(L *lua.LState) int {
 	s := L.CheckString(1)
 	v, err := url.ParseQuery(s)
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 	util.Push(L, &v, valuesTypeName)
@@ -456,7 +456,7 @@ func urlParse(L *lua.LState) int {
 
 	u, err := url.Parse(rawURL)
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 
@@ -505,7 +505,7 @@ func urlURLParse(L *lua.LState) int {
 
 	parsed, err := u.Parse(ref)
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 

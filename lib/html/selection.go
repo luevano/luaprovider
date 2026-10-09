@@ -45,7 +45,7 @@ func selectionEach(L *lua.LState) int {
 		L.Push(lua.LNumber(i))
 
 		if err := L.PCall(2, lua.MultRet, nil); err != nil {
-			L.RaiseError(err.Error())
+			L.RaiseError("%s", err.Error())
 			return
 		}
 	}))
@@ -63,7 +63,7 @@ func selectionHtml(L *lua.LState) int {
 	selection := checkSelection(L, 1)
 	html, err := selection.Html()
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 
@@ -242,7 +242,7 @@ func selectionMap(L *lua.LState) int {
 		L.Push(callback)
 		pushSelection(L, selection)
 		if err := L.PCall(1, lua.MultRet, nil); err != nil {
-			L.RaiseError(err.Error())
+			L.RaiseError("%s", err.Error())
 			return
 		}
 
@@ -329,13 +329,13 @@ func selectionSimplified(L *lua.LState) int {
 
 	html, err := selection.Html()
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 
 	article, err := readability.New().Parse(strings.NewReader(html), "https://example.com")
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 

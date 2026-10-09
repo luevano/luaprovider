@@ -31,7 +31,7 @@ func parse(L *lua.LState) int {
 	reader := strings.NewReader(value)
 	document, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 
@@ -52,7 +52,7 @@ func documentHtml(L *lua.LState) int {
 	document := checkDocument(L, 1)
 	html, err := document.Html()
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 
@@ -79,13 +79,13 @@ func documentSimplified(L *lua.LState) int {
 	document := checkDocument(L, 1)
 	html, err := document.Html()
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 
 	article, err := readability.New().Parse(strings.NewReader(html), "https://example.com")
 	if err != nil {
-		L.RaiseError(err.Error())
+		L.RaiseError("%s", err.Error())
 		return 0
 	}
 

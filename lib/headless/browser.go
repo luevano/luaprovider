@@ -12,7 +12,7 @@ func newBrowser(state *lua.LState) int {
 	browser := rod.New()
 
 	if err := browser.Connect(); err != nil {
-		state.RaiseError(err.Error())
+		state.RaiseError("%s", err.Error())
 		return 0
 	}
 
@@ -27,7 +27,7 @@ func browserPage(state *lua.LState) int {
 	page := browser.MustPage(URL)
 
 	if err := page.WaitLoad(); err != nil {
-		state.RaiseError(err.Error())
+		state.RaiseError("%s", err.Error())
 		return 0
 	}
 

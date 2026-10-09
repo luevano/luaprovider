@@ -17,7 +17,7 @@ func pageElement(state *lua.LState) int {
 	if page.MustHas(selector) {
 		element, err = page.Element(selector)
 		if err != nil {
-			state.RaiseError(err.Error())
+			state.RaiseError("%s", err.Error())
 			return 0
 		}
 		util.Push(state, element, elementTypeName)
@@ -32,7 +32,7 @@ func pageNavigate(state *lua.LState) int {
 	URL := state.CheckString(2)
 
 	if err := page.Navigate(URL); err != nil {
-		state.RaiseError(err.Error())
+		state.RaiseError("%s", err.Error())
 	}
 
 	return 0
@@ -42,7 +42,7 @@ func pageHTML(state *lua.LState) int {
 	page := util.Check[*rod.Page](state, 1)
 	HTML, err := page.HTML()
 	if err != nil {
-		state.RaiseError(err.Error())
+		state.RaiseError("%s", err.Error())
 		return 0
 	}
 

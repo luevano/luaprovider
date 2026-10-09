@@ -14,7 +14,7 @@ func elementInput(state *lua.LState) int {
 	text := state.CheckString(2)
 
 	if err := element.Input(text); err != nil {
-		state.RaiseError(err.Error())
+		state.RaiseError("%s", err.Error())
 	}
 
 	return 0
@@ -25,7 +25,7 @@ func elementClick(state *lua.LState) int {
 	count := state.OptNumber(2, 1)
 
 	if err := element.Click(proto.InputMouseButtonLeft, int(count)); err != nil {
-		state.RaiseError(err.Error())
+		state.RaiseError("%s", err.Error())
 	}
 
 	return 0
@@ -36,7 +36,7 @@ func elementHTML(state *lua.LState) int {
 
 	HTML, err := element.HTML()
 	if err != nil {
-		state.RaiseError(err.Error())
+		state.RaiseError("%s", err.Error())
 		return 0
 	}
 
