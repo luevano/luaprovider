@@ -12,10 +12,12 @@ import (
 const libName = "regexp"
 
 func Lib(L *lua.LState) *luadoc.Lib {
+	// the vars are built before luadoc registers the class, its methods are added to this same metatable
+	metatable := L.NewTypeMetatable(patternTypeName)
 	toLValue := func(r *regexp.Regexp) *lua.LUserData {
 		ud := L.NewUserData()
 		ud.Value = r
-		L.SetMetatable(ud, L.GetTypeMetatable(patternTypeName))
+		L.SetMetatable(ud, metatable)
 		return ud
 	}
 

@@ -30,7 +30,7 @@ func selectionEach(L *lua.LState) int {
 		util.Push(L, selection, selectionTypeName)
 		L.Push(lua.LNumber(i))
 
-		if err := L.PCall(2, lua.MultRet, nil); err != nil {
+		if err := L.PCall(2, 0, nil); err != nil {
 			L.RaiseError("html each: %s", err)
 			return
 		}
@@ -227,7 +227,7 @@ func selectionMap(L *lua.LState) int {
 	selection.Each(func(i int, selection *goquery.Selection) {
 		L.Push(callback)
 		util.Push(L, selection, selectionTypeName)
-		if err := L.PCall(1, lua.MultRet, nil); err != nil {
+		if err := L.PCall(1, 1, nil); err != nil {
 			L.RaiseError("html map: %s", err)
 			return
 		}
@@ -235,7 +235,7 @@ func selectionMap(L *lua.LState) int {
 		value := L.Get(-1)
 		L.Pop(1)
 
-		table.RawSetInt(i, value)
+		table.RawSetInt(i+1, value)
 	})
 
 	L.Push(table)
