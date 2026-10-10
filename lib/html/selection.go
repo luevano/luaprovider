@@ -1,69 +1,55 @@
 package html
 
 import (
-	"github.com/JohannesKaufmann/html-to-markdown"
+	"strings"
+
+	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/cixtor/readability"
+	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
-	"strings"
 )
 
 const selectionTypeName = libName + "_selection"
 
-func checkSelection(L *lua.LState, n int) *goquery.Selection {
-	ud := L.CheckUserData(n)
-	if v, ok := ud.Value.(*goquery.Selection); ok {
-		return v
-	}
-	L.ArgError(n, "selection expected")
-	return nil
-}
-
-func pushSelection(L *lua.LState, selection *goquery.Selection) {
-	ud := L.NewUserData()
-	ud.Value = selection
-	L.SetMetatable(ud, L.GetTypeMetatable(selectionTypeName))
-	L.Push(ud)
-}
-
 func selectionFind(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	selector := L.CheckString(2)
 
 	selection = selection.Find(selector)
-	pushSelection(L, selection)
+	util.Push(L, selection, selectionTypeName)
 	return 1
 }
 
 func selectionEach(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	callback := L.CheckFunction(2)
 
-	pushSelection(L, selection.Each(func(i int, selection *goquery.Selection) {
+	util.Push(L, selection.Each(func(i int, selection *goquery.Selection) {
 		L.Push(callback)
-		pushSelection(L, selection)
+		util.Push(L, selection, selectionTypeName)
 		L.Push(lua.LNumber(i))
 
 		if err := L.PCall(2, lua.MultRet, nil); err != nil {
-			L.RaiseError("%s", err.Error())
+			L.RaiseError("html each: %s", err)
 			return
 		}
-	}))
+	}), selectionTypeName)
 
 	return 1
 }
 
 func selectionText(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	L.Push(lua.LString(selection.Text()))
 	return 1
 }
 
 func selectionHtml(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	html, err := selection.Html()
 	if err != nil {
-		L.RaiseError("%s", err.Error())
+		L.RaiseError("html selection: %s", err)
 		return 0
 	}
 
@@ -72,32 +58,32 @@ func selectionHtml(L *lua.LState) int {
 }
 
 func selectionFirst(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	pushSelection(L, selection.First())
+	selection := util.Check[*goquery.Selection](L, 1)
+	util.Push(L, selection.First(), selectionTypeName)
 	return 1
 }
 
 func selectionLast(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	pushSelection(L, selection.Last())
+	selection := util.Check[*goquery.Selection](L, 1)
+	util.Push(L, selection.Last(), selectionTypeName)
 	return 1
 }
 
 func selectionParent(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	pushSelection(L, selection.Parent())
+	selection := util.Check[*goquery.Selection](L, 1)
+	util.Push(L, selection.Parent(), selectionTypeName)
 	return 1
 }
 
 func selectionEq(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	index := L.CheckInt(2)
-	pushSelection(L, selection.Eq(index))
+	util.Push(L, selection.Eq(index), selectionTypeName)
 	return 1
 }
 
 func selectionAttr(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	key := L.CheckString(2)
 	attr, exists := selection.Attr(key)
 	L.Push(lua.LString(attr))
@@ -107,7 +93,7 @@ func selectionAttr(L *lua.LState) int {
 }
 
 func selectionAttrOr(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	key := L.CheckString(2)
 	defaultValue := L.CheckString(3)
 	attr, exists := selection.Attr(key)
@@ -121,128 +107,128 @@ func selectionAttrOr(L *lua.LState) int {
 }
 
 func selectionHasClass(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	class := L.CheckString(2)
 	L.Push(lua.LBool(selection.HasClass(class)))
 	return 1
 }
 
 func selectionAddClass(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	class := L.CheckString(2)
 	selection.AddClass(class)
 	return 0
 }
 
 func selectionRemoveClass(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	class := L.CheckString(2)
 	selection.RemoveClass(class)
 	return 0
 }
 
 func selectionToggleClass(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	class := L.CheckString(2)
 	selection.ToggleClass(class)
 	return 0
 }
 
 func selectionNext(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	pushSelection(L, selection.Next())
+	selection := util.Check[*goquery.Selection](L, 1)
+	util.Push(L, selection.Next(), selectionTypeName)
 	return 1
 }
 
 func selectionNextAll(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	pushSelection(L, selection.NextAll())
+	selection := util.Check[*goquery.Selection](L, 1)
+	util.Push(L, selection.NextAll(), selectionTypeName)
 	return 1
 }
 
 func selectionNextUntil(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	selector := L.CheckString(2)
-	pushSelection(L, selection.NextUntil(selector))
+	util.Push(L, selection.NextUntil(selector), selectionTypeName)
 	return 1
 }
 
 func selectionPrev(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	pushSelection(L, selection.Prev())
+	selection := util.Check[*goquery.Selection](L, 1)
+	util.Push(L, selection.Prev(), selectionTypeName)
 	return 1
 }
 
 func selectionPrevAll(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	pushSelection(L, selection.PrevAll())
+	selection := util.Check[*goquery.Selection](L, 1)
+	util.Push(L, selection.PrevAll(), selectionTypeName)
 	return 1
 }
 
 func selectionPrevUntil(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	selector := L.CheckString(2)
-	pushSelection(L, selection.PrevUntil(selector))
+	util.Push(L, selection.PrevUntil(selector), selectionTypeName)
 	return 1
 }
 
 func selectionSiblings(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	pushSelection(L, selection.Siblings())
+	selection := util.Check[*goquery.Selection](L, 1)
+	util.Push(L, selection.Siblings(), selectionTypeName)
 	return 1
 }
 
 func selectionChildren(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	pushSelection(L, selection.Children())
+	selection := util.Check[*goquery.Selection](L, 1)
+	util.Push(L, selection.Children(), selectionTypeName)
 	return 1
 }
 
 func selectionContents(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	pushSelection(L, selection.Contents())
+	selection := util.Check[*goquery.Selection](L, 1)
+	util.Push(L, selection.Contents(), selectionTypeName)
 	return 1
 }
 
 func selectionFilter(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	selector := L.CheckString(2)
-	pushSelection(L, selection.Filter(selector))
+	util.Push(L, selection.Filter(selector), selectionTypeName)
 	return 1
 }
 
 func selectionRemove(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	selector := L.CheckString(2)
-	pushSelection(L, selection.Not(selector))
+	util.Push(L, selection.Not(selector), selectionTypeName)
 	return 1
 }
 
 func selectionIs(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	selector := L.CheckString(2)
 	L.Push(lua.LBool(selection.Is(selector)))
 	return 1
 }
 
 func selectionFindSelection(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	other := checkSelection(L, 2)
-	pushSelection(L, selection.FindSelection(other))
+	selection := util.Check[*goquery.Selection](L, 1)
+	other := util.Check[*goquery.Selection](L, 2)
+	util.Push(L, selection.FindSelection(other), selectionTypeName)
 	return 1
 }
 
 func selectionMap(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	callback := L.CheckFunction(2)
 
 	table := L.NewTable()
 
 	selection.Each(func(i int, selection *goquery.Selection) {
 		L.Push(callback)
-		pushSelection(L, selection)
+		util.Push(L, selection, selectionTypeName)
 		if err := L.PCall(1, lua.MultRet, nil); err != nil {
-			L.RaiseError("%s", err.Error())
+			L.RaiseError("html map: %s", err)
 			return
 		}
 
@@ -257,67 +243,67 @@ func selectionMap(L *lua.LState) int {
 }
 
 func selectionClosest(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	selector := L.CheckString(2)
-	pushSelection(L, selection.Closest(selector))
+	util.Push(L, selection.Closest(selector), selectionTypeName)
 	return 1
 }
 
 func selectionParents(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	pushSelection(L, selection.Parents())
+	selection := util.Check[*goquery.Selection](L, 1)
+	util.Push(L, selection.Parents(), selectionTypeName)
 	return 1
 }
 
 func selectionParentsUntil(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	selector := L.CheckString(2)
-	pushSelection(L, selection.ParentsUntil(selector))
+	util.Push(L, selection.ParentsUntil(selector), selectionTypeName)
 	return 1
 }
 
 func selectionSlice(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	start := L.CheckInt(2)
 	end := L.CheckInt(3)
-	pushSelection(L, selection.Slice(start, end))
+	util.Push(L, selection.Slice(start, end), selectionTypeName)
 	return 1
 }
 
 func selectionTerminate(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	pushSelection(L, selection.End())
+	selection := util.Check[*goquery.Selection](L, 1)
+	util.Push(L, selection.End(), selectionTypeName)
 	return 1
 }
 
 func selectionAdd(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	selector := L.CheckString(2)
-	pushSelection(L, selection.Add(selector))
+	util.Push(L, selection.Add(selector), selectionTypeName)
 	return 1
 }
 
 func selectionLength(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	L.Push(lua.LNumber(selection.Length()))
 	return 1
 }
 
 func selectionAddSelection(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	other := checkSelection(L, 2)
-	pushSelection(L, selection.AddSelection(other))
+	selection := util.Check[*goquery.Selection](L, 1)
+	other := util.Check[*goquery.Selection](L, 2)
+	util.Push(L, selection.AddSelection(other), selectionTypeName)
 	return 1
 }
 
 func selectionAddBack(L *lua.LState) int {
-	selection := checkSelection(L, 1)
-	pushSelection(L, selection.AddBack())
+	selection := util.Check[*goquery.Selection](L, 1)
+	util.Push(L, selection.AddBack(), selectionTypeName)
 	return 1
 }
 
 func selectionMarkdown(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 	converter := md.NewConverter("", true, nil)
 
 	L.Push(lua.LString(converter.Convert(selection)))
@@ -325,22 +311,22 @@ func selectionMarkdown(L *lua.LState) int {
 }
 
 func selectionSimplified(L *lua.LState) int {
-	selection := checkSelection(L, 1)
+	selection := util.Check[*goquery.Selection](L, 1)
 
 	html, err := selection.Html()
 	if err != nil {
-		L.RaiseError("%s", err.Error())
+		L.RaiseError("html selection: %s", err)
 		return 0
 	}
 
 	article, err := readability.New().Parse(strings.NewReader(html), "https://example.com")
 	if err != nil {
-		L.RaiseError("%s", err.Error())
+		L.RaiseError("html simplify: %s", err)
 		return 0
 	}
 
 	document := goquery.NewDocumentFromNode(article.Node)
 
-	pushSelection(L, document.Selection)
+	util.Push(L, document.Selection, selectionTypeName)
 	return 1
 }

@@ -70,7 +70,7 @@ func encrypt(L *lua.LState) int {
 
 	cipher, err := aes.NewCipher([]byte(key))
 	if err != nil {
-		L.RaiseError("%s", err.Error())
+		L.RaiseError("aes encrypt: %s", err)
 		return 0
 	}
 
@@ -87,7 +87,7 @@ func decrypt(L *lua.LState) int {
 
 	cipher, err := aes.NewCipher([]byte(key))
 	if err != nil {
-		L.RaiseError("%s", err.Error())
+		L.RaiseError("aes decrypt: %s", err)
 		return 0
 	}
 

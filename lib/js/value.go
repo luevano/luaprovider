@@ -12,13 +12,13 @@ func vmValueExport(L *lua.LState) int {
 	value := util.Check[*otto.Value](L, 1)
 	nativeValue, err := value.Export()
 	if err != nil {
-		L.RaiseError("%s", err.Error())
+		L.RaiseError("js export: %s", err)
 		return 0
 	}
 
 	lvalue, err := util.ToLValue(L, nativeValue)
 	if err != nil {
-		L.RaiseError("%s", err.Error())
+		L.RaiseError("js export: %s", err)
 		return 0
 	}
 

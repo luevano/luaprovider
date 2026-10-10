@@ -62,7 +62,7 @@ func apiDecode(L *lua.LState) int {
 
 	value, err := decode(L, []byte(str))
 	if err != nil {
-		L.RaiseError("%s", err.Error())
+		L.RaiseError("json decode: %s", err)
 		return 0
 	}
 	L.Push(value)
@@ -74,7 +74,7 @@ func apiEncode(L *lua.LState) int {
 
 	data, err := encode(value)
 	if err != nil {
-		L.RaiseError("%s", err.Error())
+		L.RaiseError("json encode: %s", err)
 		return 0
 	}
 	L.Push(lua.LString(string(data)))

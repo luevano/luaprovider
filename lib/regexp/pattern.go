@@ -1,9 +1,10 @@
 package regexp
 
 import (
+	"regexp"
+
 	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
-	"regexp"
 )
 
 const patternTypeName = libName + "_pattern"
