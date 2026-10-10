@@ -2,16 +2,19 @@ package luaprovider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
 	"github.com/philippgille/gokv"
-	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	"github.com/yuin/gluamapper"
 	lua "github.com/yuin/gopher-lua"
@@ -23,7 +26,11 @@ type provider struct {
 	store   gokv.Store
 	info    libmangal.ProviderInfo
 	options Options
-	state   *lua.LState
+	log     *providerLogger
+
+	// a lua state isn't safe for concurrent use, calls take turns
+	mu    sync.Mutex
+	state *lua.LState
 
 	fnSearchMangas,
 	fnMangaVolumes,
@@ -44,21 +51,31 @@ func (p *provider) Info() libmangal.ProviderInfo {
 	return p.info
 }
 
-type IntoLValue interface {
+func (p *provider) SetLogger(logger *logger.Logger) {
+	p.log.setLogger(logger)
+}
+
+type intoLValue interface {
 	IntoLValue() lua.LValue
 }
 
-// loadItems will run the given lua function,
-// perform type checking and apply conversion function for each item.
-func loadItems[Input IntoLValue, Output any](
+// loadItems runs the lua function and converts each item of the table it returns.
+func loadItems[Input intoLValue, Output any](
 	ctx context.Context,
-	state *lua.LState,
+	p *provider,
 	lfunc *lua.LFunction,
 	convert func(int, *lua.LTable) (Output, error),
 	args ...Input,
 ) ([]Output, error) {
-	state.SetContext(ctx)
-	err := state.CallByParam(lua.P{
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	// the returned value has to be popped, else the stack grows until the state breaks
+	top := p.state.GetTop()
+	defer p.state.SetTop(top)
+
+	p.state.SetContext(ctx)
+	err := p.state.CallByParam(lua.P{
 		Fn:      lfunc,
 		NRet:    1,
 		Protect: true,
@@ -69,7 +86,10 @@ func loadItems[Input IntoLValue, Output any](
 		return nil, err
 	}
 
-	output := state.CheckTable(-1)
+	output, ok := p.state.Get(-1).(*lua.LTable)
+	if !ok {
+		return nil, fmt.Errorf("expected a table, got %s", p.state.Get(-1).Type())
+	}
 
 	var values []lua.LValue
 	output.ForEach(func(_ lua.LValue, value lua.LValue) {
@@ -80,14 +100,13 @@ func loadItems[Input IntoLValue, Output any](
 	for i, value := range values {
 		table, ok := value.(*lua.LTable)
 		if !ok {
-			return nil, errors.Wrapf(fmt.Errorf("expected table, got %s", value.Type().String()), "parsing item %d", i)
+			return nil, fmt.Errorf("item %d: expected a table, got %s", i, value.Type())
 		}
 
 		item, err := convert(i, table)
 		if err != nil {
-			return nil, errors.Wrapf(err, "parsing item %d", i)
+			return nil, fmt.Errorf("item %d: %w", i, err)
 		}
-
 		items[i] = item
 	}
 	return items, nil
@@ -101,11 +120,6 @@ func (l luaString) IntoLValue() lua.LValue {
 	return lua.LString(l)
 }
 
-func (p *provider) SetLogger(logger *logger.Logger) {
-	prefix_ = p.info.ID + ": "
-	logger_ = logger
-}
-
 var (
 	glOpt    gluamapper.Option = gluamapper.Option{NameFunc: gluamapper.Id, TagName: "gluamapper", ErrorUnused: false}
 	glMapper gluamapper.Mapper = *gluamapper.NewMapper(glOpt)
@@ -115,35 +129,35 @@ func (p *provider) SearchMangas(
 	ctx context.Context,
 	query string,
 ) ([]mangadata.Manga, error) {
-	Log("searching mangas with query %q", query)
+	p.log.log("searching mangas with query %q", query)
 
-	return loadItems(
+	mangas, err := loadItems(
 		ctx,
-		p.state,
+		p,
 		p.fnSearchMangas,
 		func(i int, table *lua.LTable) (mangadata.Manga, error) {
 			var manga luaManga
 			if err := glMapper.Map(table, &manga); err != nil {
-				return &luaManga{}, err
+				return nil, err
 			}
-
 			if manga.ID == "" {
-				return &luaManga{}, errors.New("id must be non-empty")
+				return nil, errors.New("missing id")
 			}
-
 			if manga.Title == "" {
-				return &luaManga{}, errors.New("title must be non-empty")
+				return nil, errors.New("missing title")
 			}
 
-			// TODO: implement metadata logic, this is a temp fix for
-			// the nil pointer dereference on SetMetadata
-			var meta metadata.Metadata = &mangadata.Metadata{}
+			var meta metadata.Metadata = manga.newMetadata(p.info.ID)
 			manga.metadata = &meta
 			manga.table = table
 			return &manga, nil
 		},
 		luaString(query),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("%s: search %q: %w", p.info.ID, query, err)
+	}
+	return mangas, nil
 }
 
 func (p *provider) MangaVolumes(
@@ -152,47 +166,32 @@ func (p *provider) MangaVolumes(
 ) ([]mangadata.Volume, error) {
 	m, ok := manga.(*luaManga)
 	if !ok {
-		return nil, fmt.Errorf("unexpected manga type: %T", manga)
+		return nil, fmt.Errorf("expected a luaprovider manga, got %T", manga)
 	}
 
-	Log("fetching volumes for manga %q", m)
-	return p.mangaVolumes(ctx, *m)
-}
-
-func (p *provider) mangaVolumes(
-	ctx context.Context,
-	manga luaManga,
-) ([]mangadata.Volume, error) {
-	return loadItems(
+	p.log.log("fetching volumes for manga %q", m)
+	volumes, err := loadItems(
 		ctx,
-		p.state,
+		p,
 		p.fnMangaVolumes,
 		func(_ int, table *lua.LTable) (mangadata.Volume, error) {
 			var volume luaVolume
-
 			if err := glMapper.Map(table, &volume); err != nil {
-				return &luaVolume{}, err
+				return nil, err
 			}
 
-			// Mangadex uses "none" as "un-volumed" chapters, which is set to 0 to be usable
-			// if volume.Number <= 0 {
-			// 	return luaVolume{}, fmt.Errorf("invalid volume number: %d", volume.Number)
-			// }
-
-			// TODO: do this right?
-			// this gives the :manga() function to volume
-			// p.state.SetFuncs(table, map[string]lua.LGFunction{"manga": func(state *lua.LState) int {
-			// 	state.Push(manga.table)
-			// 	return 1
-			// }})
-			// dirty way of giving access to manga table
-			table.RawSetString("manga", manga.table)
+			// gives the volume access to its manga
+			table.RawSetString("manga", m.table)
 			volume.table = table
-			volume.manga = &manga
+			volume.manga = m
 			return &volume, nil
 		},
-		&manga,
+		m,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("%s: volumes of %q: %w", p.info.ID, m, err)
+	}
+	return volumes, nil
 }
 
 func (p *provider) VolumeChapters(
@@ -201,43 +200,42 @@ func (p *provider) VolumeChapters(
 ) ([]mangadata.Chapter, error) {
 	v, ok := volume.(*luaVolume)
 	if !ok {
-		return nil, fmt.Errorf("unexpected volume type: %T", volume)
+		return nil, fmt.Errorf("expected a luaprovider volume, got %T", volume)
 	}
 
-	Log("fetching chapters for volume %s", v.String())
-	return p.volumeChapters(ctx, *v)
-}
-
-func (p *provider) volumeChapters(
-	ctx context.Context,
-	volume luaVolume,
-) ([]mangadata.Chapter, error) {
-	return loadItems(
+	p.log.log("fetching chapters for volume %s", v)
+	var last float32
+	chapters, err := loadItems(
 		ctx,
-		p.state,
+		p,
 		p.fnVolumeChapters,
-		func(i int, table *lua.LTable) (mangadata.Chapter, error) {
+		func(_ int, table *lua.LTable) (mangadata.Chapter, error) {
 			var chapter luaChapter
 			if err := glMapper.Map(table, &chapter); err != nil {
-				return &luaChapter{}, err
+				return nil, err
 			}
-
 			if chapter.Title == "" {
-				return &luaChapter{}, errors.New("title must be non-empty")
+				return nil, errors.New("missing title")
 			}
-
-			if chapter.Number == 0 {
-				chapter.Number = float32(i)
+			// chapters without a number (e.g. "Extra") go right after the previous one
+			if table.RawGetString("number") == lua.LNil {
+				chapter.Number = nextExtraNumber(last)
 			}
+			last = chapter.Number
 
-			// TODO: do this right? see above for volume
-			table.RawSetString("volume", volume.table)
+			// gives the chapter access to its volume
+			table.RawSetString("volume", v.table)
+			chapter.date = p.parseDate(chapter.Date)
 			chapter.table = table
-			chapter.volume = &volume
+			chapter.volume = v
 			return &chapter, nil
 		},
-		&volume,
+		v,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("%s: chapters of %q vol %s: %w", p.info.ID, v.manga, v, err)
+	}
+	return chapters, nil
 }
 
 func (p *provider) ChapterPages(
@@ -246,55 +244,69 @@ func (p *provider) ChapterPages(
 ) ([]mangadata.Page, error) {
 	c, ok := chapter.(*luaChapter)
 	if !ok {
-		return nil, fmt.Errorf("unexpected chapter type: %T", chapter)
+		return nil, fmt.Errorf("expected a luaprovider chapter, got %T", chapter)
 	}
 
-	Log("fetching pages for chapter %q", c)
-	return p.chapterPages(ctx, *c)
-}
-
-func (p *provider) chapterPages(
-	ctx context.Context,
-	chapter luaChapter,
-) ([]mangadata.Page, error) {
-	return loadItems(
+	p.log.log("fetching pages for chapter %q", c)
+	pages, err := loadItems(
 		ctx,
-		p.state,
+		p,
 		p.fnChapterPages,
-		func(i int, table *lua.LTable) (mangadata.Page, error) {
+		func(_ int, table *lua.LTable) (mangadata.Page, error) {
 			var page luaPage
 			if err := glMapper.Map(table, &page); err != nil {
-				return &luaPage{}, err
+				return nil, err
 			}
-
-			page.chapter = &chapter
+			page.chapter = c
 
 			if page.URL == "" {
-				return &luaPage{}, errors.New("url must be set")
+				return nil, errors.New("missing url")
 			}
-
 			if page.Ext == "" {
 				page.Ext = ".jpg"
 			}
-
 			if !fileExtensionRegex.MatchString(page.Ext) {
-				return &luaPage{}, fmt.Errorf("invalid page extension: %s", page.Ext)
+				return nil, fmt.Errorf("invalid image extension %q", page.Ext)
 			}
 
 			if page.Headers == nil {
-				page.Headers = make(map[string]string)
-				page.Headers["Referer"] = page.chapter.URL
-				page.Headers["Accept"] = "image/webp,image/apng,image/*,*/*;q=0.8"
-				if p.options.UserAgent != "" {
-					page.Headers["User-Agent"] = p.options.UserAgent
-				} else {
-					page.Headers["User-Agent"] = defaultUserAgent
+				page.Headers = map[string]string{
+					"Referer":    c.URL,
+					"Accept":     "image/webp,image/apng,image/*,*/*;q=0.8",
+					"User-Agent": p.options.UserAgent,
 				}
 			}
 			return &page, nil
 		},
-		&chapter,
+		c,
 	)
+	if err != nil {
+		return nil, fmt.Errorf("%s: pages of chapter %q: %w", p.info.ID, c, err)
+	}
+	return pages, nil
+}
+
+// parseDate parses a "YYYY-MM-DD" date, today if it's empty or invalid.
+func (p *provider) parseDate(date string) metadata.Date {
+	parsed := time.Now()
+	if date != "" {
+		var err error
+		if parsed, err = time.Parse(time.DateOnly, date); err != nil {
+			p.log.log("invalid chapter date %q, using today: %s", date, err)
+			parsed = time.Now()
+		}
+	}
+	return metadata.Date{Year: parsed.Year(), Month: int(parsed.Month()), Day: parsed.Day()}
+}
+
+// nextExtraNumber returns the number for a chapter without one that comes right after last,
+// e.g. an "Extra" after chapter 5 is 5.5, after 5.5 it's 5.6.
+func nextExtraNumber(last float32) float32 {
+	// avoids floating point precision issues https://stackoverflow.com/a/56300186
+	if last == float32(int(last)) {
+		return float32((float64(last*10) + 5) / 10)
+	}
+	return float32((float64(last*10) + 1) / 10)
 }
 
 func (p *provider) GetPageImage(
@@ -303,10 +315,14 @@ func (p *provider) GetPageImage(
 ) ([]byte, error) {
 	page_, ok := page.(*luaPage)
 	if !ok {
-		return nil, fmt.Errorf("unexpected page type: %T", page)
+		return nil, fmt.Errorf("expected a luaprovider page, got %T", page)
 	}
 
-	return p.getPageImage(ctx, *page_)
+	image, err := p.getPageImage(ctx, *page_)
+	if err != nil {
+		return nil, fmt.Errorf("%s: image for chapter %q: %w", p.info.ID, page_.chapter, err)
+	}
+	return image, nil
 }
 
 func (p *provider) getPageImage(
@@ -333,13 +349,8 @@ func (p *provider) getPageImage(
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", response.StatusCode)
+		return nil, fmt.Errorf("GET %s: %d %s", page.URL, response.StatusCode, strings.ToLower(http.StatusText(response.StatusCode)))
 	}
 
-	image, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return image, nil
+	return io.ReadAll(response.Body)
 }

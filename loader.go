@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	lm "github.com/luevano/libmangal"
 	"github.com/philippgille/gokv"
@@ -15,8 +16,6 @@ import (
 const defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0"
 
 var _ lm.ProviderLoader = (*loader)(nil)
-
-// TODO: use the cache store effectively like with mangoprovider
 
 // Options are the general luaprovider options.
 type Options struct {
@@ -35,7 +34,7 @@ type Options struct {
 
 func DefaultOptions() Options {
 	return Options{
-		HTTPClient: &http.Client{},
+		HTTPClient: &http.Client{Timeout: time.Minute},
 		UserAgent:  defaultUserAgent,
 		CacheStore: func(dbName, bucketName string) (gokv.Store, error) {
 			return syncmap.NewStore(syncmap.DefaultOptions), nil
@@ -73,25 +72,38 @@ func (l loader) String() string {
 }
 
 func (l loader) Load(ctx context.Context) (lm.Provider, error) {
-	provider := &provider{
-		info:    l.info,
-		options: l.options,
+	p, err := l.load(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load %s: %w", l.info.ID, err)
 	}
+	return p, nil
+}
 
-	state, store, err := newState(l.options, l.info.ID)
+func (l loader) load(ctx context.Context) (_ *provider, err error) {
+	options := l.options
+	if options.UserAgent == "" {
+		options.UserAgent = defaultUserAgent
+	}
+	log := newProviderLogger(l.info.ID + ": ")
+
+	state, store, err := newState(options, l.info.ID, log)
 	if err != nil {
 		return nil, err
 	}
+	// don't leave the state and the cache store open if the script fails
+	defer func() {
+		if err != nil {
+			state.Close()
+			store.Close()
+		}
+	}()
 
-	provider.store = store
-	provider.state = state
-	provider.state.SetContext(ctx)
-	lfunc, err := provider.state.Load(bytes.NewReader(l.script), l.info.Name)
+	state.SetContext(ctx)
+	lfunc, err := state.Load(bytes.NewReader(l.script), l.info.Name)
 	if err != nil {
 		return nil, err
 	}
-
-	err = provider.state.CallByParam(lua.P{
+	err = state.CallByParam(lua.P{
 		Fn:      lfunc,
 		NRet:    0,
 		Protect: true,
@@ -100,19 +112,23 @@ func (l loader) Load(ctx context.Context) (lm.Provider, error) {
 		return nil, err
 	}
 
+	p := &provider{
+		info:    l.info,
+		options: options,
+		log:     log,
+		state:   state,
+		store:   store,
+	}
 	for name, fn := range map[string]**lua.LFunction{
-		methodSearchMangas:   &provider.fnSearchMangas,
-		methodMangaVolumes:   &provider.fnMangaVolumes,
-		methodVolumeChapters: &provider.fnVolumeChapters,
-		methodChapterPages:   &provider.fnChapterPages,
+		methodSearchMangas:   &p.fnSearchMangas,
+		methodMangaVolumes:   &p.fnMangaVolumes,
+		methodVolumeChapters: &p.fnVolumeChapters,
+		methodChapterPages:   &p.fnChapterPages,
 	} {
 		var found bool
-		*fn, found = provider.state.GetGlobal(name).(*lua.LFunction)
-
-		if !found {
-			return nil, fmt.Errorf("missing function: %s", name)
+		if *fn, found = state.GetGlobal(name).(*lua.LFunction); !found {
+			return nil, fmt.Errorf("missing function %s", name)
 		}
 	}
-
-	return provider, nil
+	return p, nil
 }

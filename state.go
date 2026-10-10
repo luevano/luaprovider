@@ -10,7 +10,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-func newState(options Options, providerID string) (*lua.LState, gokv.Store, error) {
+func newState(options Options, providerID string, log *providerLogger) (*lua.LState, gokv.Store, error) {
 	libs := []lua.LGFunction{
 		lua.OpenBase,
 		lua.OpenTable,
@@ -30,16 +30,17 @@ func newState(options Options, providerID string) (*lua.LState, gokv.Store, erro
 		injectLib(state)
 	}
 
-	// TODO: provide options to create buckets with different
-	// names (so one bucket for mangas, one for volumes, etc.)
 	store, err := options.CacheStore(providerID, providerID)
 	if err != nil {
+		state.Close()
 		return nil, nil, err
 	}
 
 	lib.Preload(state, &lib.Options{
 		HTTPClient: options.HTTPClient,
 		CacheStore: store,
+		UserAgent:  options.UserAgent,
+		Log:        log.log,
 	})
 
 	pkg := state.GetGlobal("package").(*lua.LTable)
