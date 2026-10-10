@@ -2,6 +2,7 @@ package lib
 
 import (
 	"net/http"
+	"time"
 
 	luadoc "github.com/luevano/gopher-luadoc"
 	"github.com/luevano/luaprovider/lib/crypto"
@@ -11,9 +12,10 @@ import (
 	httpLib "github.com/luevano/luaprovider/lib/http"
 	"github.com/luevano/luaprovider/lib/js"
 	"github.com/luevano/luaprovider/lib/levenshtein"
+	"github.com/luevano/luaprovider/lib/log"
 	"github.com/luevano/luaprovider/lib/regexp"
 	"github.com/luevano/luaprovider/lib/strings"
-	"github.com/luevano/luaprovider/lib/time"
+	timeLib "github.com/luevano/luaprovider/lib/time"
 	"github.com/luevano/luaprovider/lib/urls"
 	"github.com/luevano/luaprovider/lib/util"
 	"github.com/philippgille/gokv"
@@ -24,12 +26,17 @@ import (
 type Options struct {
 	HTTPClient *http.Client
 	CacheStore gokv.Store
+	// UserAgent: Default User-Agent header of http requests.
+	UserAgent string
+	// Log: Logs a message of the provider, used by the log library.
+	Log func(format string, a ...any)
 }
 
 func DefaultOptions() *Options {
 	return &Options{
-		HTTPClient: &http.Client{},
+		HTTPClient: &http.Client{Timeout: time.Minute},
 		CacheStore: syncmap.NewStore(syncmap.DefaultOptions),
+		Log:        func(string, ...any) {},
 	}
 }
 
@@ -47,14 +54,16 @@ func Lib(L *lua.LState, options *Options) *luadoc.Lib {
 			html.Lib(),
 			levenshtein.Lib(),
 			util.Lib(),
-			time.Lib(),
+			timeLib.Lib(),
 			urls.Lib(),
 			encoding.Lib(L),
 			headless.Lib(),
 			httpLib.Lib(httpLib.Options{
 				HTTPClient: options.HTTPClient,
 				CacheStore: options.CacheStore,
+				UserAgent:  options.UserAgent,
 			}),
+			log.Lib(options.Log),
 		},
 	}
 }
