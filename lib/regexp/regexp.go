@@ -5,8 +5,8 @@ import (
 
 	luadoc "github.com/luevano/gopher-luadoc"
 	"github.com/luevano/luaprovider/util"
-	"github.com/mvdan/xurls"
 	lua "github.com/yuin/gopher-lua"
+	"mvdan.cc/xurls/v2"
 )
 
 const libName = "regex"
@@ -172,13 +172,13 @@ Inside replacement, $ signs are interpreted as in expand, so for instance $1 rep
 			{
 				Name:        "urls_relaxed",
 				Description: "Matches all the urls it can find.",
-				Value:       toLValue(xurls.Relaxed),
+				Value:       toLValue(xurls.Relaxed()),
 				Type:        patternTypeName,
 			},
 			{
 				Name:        "urls_strict",
 				Description: "Only matches urls with a scheme to avoid false positives.",
-				Value:       toLValue(xurls.Strict),
+				Value:       toLValue(xurls.Strict()),
 				Type:        patternTypeName,
 			},
 		},

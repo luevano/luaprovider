@@ -3,11 +3,12 @@ package util
 import (
 	"sync"
 
+	"slices"
+
 	luadoc "github.com/luevano/gopher-luadoc"
 	"github.com/luevano/luaprovider/util"
 	"github.com/samber/lo"
 	lua "github.com/yuin/gopher-lua"
-	"golang.org/x/exp/slices"
 )
 
 const libName = "util"
