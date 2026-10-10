@@ -2,6 +2,9 @@ package luaprovider
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"sync"
 	"testing"
@@ -9,6 +12,8 @@ import (
 
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/mangadata"
+	"github.com/philippgille/gokv"
+	"github.com/philippgille/gokv/syncmap"
 )
 
 const testScript = `
@@ -40,8 +45,13 @@ end
 
 func loadTestProvider(t *testing.T, script string) *provider {
 	t.Helper()
+	return loadTestProviderWith(t, script, DefaultOptions())
+}
+
+func loadTestProviderWith(t *testing.T, script string, options Options) *provider {
+	t.Helper()
 	info := libmangal.ProviderInfo{ID: "test", Name: "Test", Version: "0.1.0"}
-	loader, err := NewLoader([]byte(script), info, DefaultOptions())
+	loader, err := NewLoader([]byte(script), info, options)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +103,9 @@ func TestConcurrentCalls(t *testing.T) {
 }
 
 func TestChaptersAndMetadata(t *testing.T) {
-	p := loadTestProvider(t, testScript)
+	options := DefaultOptions()
+	options.Filter.ShowUnavailableChapters = true
+	p := loadTestProviderWith(t, testScript, options)
 	ctx := context.Background()
 
 	mangas, err := p.SearchMangas(ctx, "x")
@@ -117,6 +129,9 @@ func TestChaptersAndMetadata(t *testing.T) {
 		number      float32
 		unavailable string
 	}{{0.5, ""}, {1, ""}, {1.5, ""}, {2, "external"}}
+	if len(chapters) != len(want) {
+		t.Fatalf("wanted %d chapters, got %d", len(want), len(chapters))
+	}
 	for i, chapter := range chapters {
 		info := chapter.Info()
 		if info.Number != want[i].number || info.Unavailable != want[i].unavailable {
@@ -189,4 +204,78 @@ function ChapterPages() return {} end
 	if len(p.log.backlog) != 1 || p.log.backlog[0] != "test: loaded" {
 		t.Errorf("wanted the script's message in the backlog, got %q", p.log.backlog)
 	}
+}
+
+func TestUnavailableChaptersAreHidden(t *testing.T) {
+	p := loadTestProvider(t, testScript)
+	ctx := context.Background()
+
+	mangas, err := p.SearchMangas(ctx, "x")
+	if err != nil {
+		t.Fatal(err)
+	}
+	volumes, err := p.MangaVolumes(ctx, mangas[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	chapters, err := p.VolumeChapters(ctx, volumes[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, chapter := range chapters {
+		if chapter.Info().Unavailable != "" {
+			t.Errorf("chapter %q should be hidden", chapter)
+		}
+	}
+	if len(chapters) != 3 {
+		t.Errorf("wanted 3 chapters, got %d", len(chapters))
+	}
+}
+
+func TestScriptOptions(t *testing.T) {
+	options := DefaultOptions()
+	options.Filter.Language = "es"
+	options.Filter.NSFW = true
+	p := loadTestProviderWith(t, `
+local options = require("sdk").options
+assert(options.language == "es" and options.nsfw, "options")
+`+testScript, options)
+	if p == nil {
+		t.Fatal("not loaded")
+	}
+}
+
+// countingStore counts how many times it's open at once.
+type countingStore struct {
+	gokv.Store
+	open *int
+}
+
+func (s countingStore) Close() error {
+	*s.open--
+	return nil
+}
+
+func TestCacheStoreIsOnlyOpenWhileUsed(t *testing.T) {
+	var open int
+	store := syncmap.NewStore(syncmap.DefaultOptions)
+	options := DefaultOptions()
+	options.CacheStore = func(string, string) (gokv.Store, error) {
+		open++
+		return countingStore{Store: store, open: &open}, nil
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "hi")
+	}))
+	defer server.Close()
+
+	p := loadTestProviderWith(t, fmt.Sprintf(`
+local sdk = require("sdk")
+sdk.http.request("GET", %q):send()
+`, server.URL)+testScript, options)
+	if open != 0 {
+		t.Errorf("the cache store is still open %d times after loading", open)
+	}
+	p.Close()
 }

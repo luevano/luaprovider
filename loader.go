@@ -8,6 +8,7 @@ import (
 	"time"
 
 	lm "github.com/luevano/libmangal"
+	"github.com/luevano/luaprovider/lib/options"
 	"github.com/philippgille/gokv"
 	"github.com/philippgille/gokv/syncmap"
 	lua "github.com/yuin/gopher-lua"
@@ -30,15 +31,33 @@ type Options struct {
 
 	// PackagePaths is a list of optional extra package paths.
 	PackagePaths []string
+
+	// Filter options, scripts read them from sdk.options.
+	Filter FilterOptions
+}
+
+// FilterOptions are the same as mangoprovider's.
+type FilterOptions = options.Filter
+
+func DefaultFilterOptions() FilterOptions {
+	return FilterOptions{
+		NSFW:                    false,
+		Language:                "en",
+		AvoidDuplicateChapters:  true,
+		ShowUnavailableChapters: false,
+	}
 }
 
 func DefaultOptions() Options {
+	// the store is opened on each use, it has to be the same one to cache anything
+	store := syncmap.NewStore(syncmap.DefaultOptions)
 	return Options{
 		HTTPClient: &http.Client{Timeout: time.Minute},
 		UserAgent:  defaultUserAgent,
 		CacheStore: func(dbName, bucketName string) (gokv.Store, error) {
-			return syncmap.NewStore(syncmap.DefaultOptions), nil
+			return store, nil
 		},
+		Filter: DefaultFilterOptions(),
 	}
 }
 
@@ -81,22 +100,25 @@ func (l loader) Load(ctx context.Context) (lm.Provider, error) {
 
 func (l loader) load(ctx context.Context) (_ *provider, err error) {
 	options := l.options
+	defaults := DefaultOptions()
 	if options.UserAgent == "" {
-		options.UserAgent = defaultUserAgent
+		options.UserAgent = defaults.UserAgent
+	}
+	if options.HTTPClient == nil {
+		options.HTTPClient = defaults.HTTPClient
+	}
+	if options.CacheStore == nil {
+		options.CacheStore = defaults.CacheStore
 	}
 	log := newProviderLogger(l.info.ID + ": ")
 	res := &resources{}
 
-	state, store, err := newState(options, l.info.ID, log, res)
-	if err != nil {
-		return nil, err
-	}
-	// don't leave the state and the cache store open if the script fails
+	state := newState(options, l.info.ID, log, res)
+	// don't leave the state open if the script fails
 	defer func() {
 		if err != nil {
 			res.close()
 			state.Close()
-			store.Close()
 		}
 	}()
 
@@ -120,7 +142,6 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 		log:       log,
 		resources: res,
 		state:     state,
-		store:     store,
 	}
 	for name, fn := range map[string]**lua.LFunction{
 		methodSearchMangas:   &p.fnSearchMangas,

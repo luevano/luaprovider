@@ -13,7 +13,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-func newState(options Options, providerID string, log *providerLogger, resources *resources) (*lua.LState, gokv.Store, error) {
+func newState(options Options, providerID string, log *providerLogger, resources *resources) *lua.LState {
 	libs := []lua.LGFunction{
 		lua.OpenBase,
 		lua.OpenTable,
@@ -33,11 +33,9 @@ func newState(options Options, providerID string, log *providerLogger, resources
 		injectLib(state)
 	}
 
-	store, err := options.CacheStore(providerID, providerID)
-	if err != nil {
-		state.Close()
-		return nil, nil, err
-	}
+	store := &lazyStore{open: func() (gokv.Store, error) {
+		return options.CacheStore(providerID, providerID)
+	}}
 
 	lib.Preload(state, &lib.Options{
 		HTTPClient: options.HTTPClient,
@@ -45,6 +43,7 @@ func newState(options Options, providerID string, log *providerLogger, resources
 		UserAgent:  options.UserAgent,
 		Log:        log.log,
 		Track:      resources.track,
+		Filter:     options.Filter,
 	})
 
 	pkg := state.GetGlobal("package").(*lua.LTable)
@@ -55,7 +54,7 @@ func newState(options Options, providerID string, log *providerLogger, resources
 
 	pkg.RawSetString("path", lua.LString(strings.Join(paths, ";")))
 
-	return state, store, nil
+	return state
 }
 
 // resources: Things the lua libraries open (e.g. headless browsers), closed with the provider.

@@ -14,6 +14,7 @@ import (
 	"github.com/luevano/luaprovider/lib/js"
 	"github.com/luevano/luaprovider/lib/levenshtein"
 	"github.com/luevano/luaprovider/lib/log"
+	optionsLib "github.com/luevano/luaprovider/lib/options"
 	"github.com/luevano/luaprovider/lib/regexp"
 	"github.com/luevano/luaprovider/lib/strings"
 	timeLib "github.com/luevano/luaprovider/lib/time"
@@ -33,6 +34,8 @@ type Options struct {
 	Log func(format string, a ...any)
 	// Track: Resources (e.g. headless browsers) to close with the provider.
 	Track func(io.Closer)
+	// Filter: The user's filters, read by scripts from the options library.
+	Filter optionsLib.Filter
 }
 
 func DefaultOptions() *Options {
@@ -41,6 +44,7 @@ func DefaultOptions() *Options {
 		CacheStore: syncmap.NewStore(syncmap.DefaultOptions),
 		Log:        func(string, ...any) {},
 		Track:      func(io.Closer) {},
+		Filter:     optionsLib.Filter{Language: "en"},
 	}
 }
 
@@ -68,6 +72,7 @@ func Lib(L *lua.LState, options *Options) *luadoc.Lib {
 				UserAgent:  options.UserAgent,
 			}),
 			log.Lib(options.Log),
+			optionsLib.Lib(options.Filter),
 		},
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -14,7 +15,6 @@ import (
 	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
-	"github.com/philippgille/gokv"
 	"github.com/samber/lo"
 	"github.com/yuin/gluamapper"
 	lua "github.com/yuin/gopher-lua"
@@ -23,7 +23,6 @@ import (
 var _ libmangal.Provider = (*provider)(nil)
 
 type provider struct {
-	store     gokv.Store
 	info      libmangal.ProviderInfo
 	options   Options
 	log       *providerLogger
@@ -32,6 +31,9 @@ type provider struct {
 	// a lua state isn't safe for concurrent use, calls take turns
 	mu    sync.Mutex
 	state *lua.LState
+	// closing a lua state twice panics
+	closeOnce sync.Once
+	closeErr  error
 
 	fnSearchMangas,
 	fnMangaVolumes,
@@ -44,9 +46,11 @@ func (p *provider) String() string {
 }
 
 func (p *provider) Close() error {
-	err := p.resources.close()
-	p.state.Close()
-	return errors.Join(err, p.store.Close())
+	p.closeOnce.Do(func() {
+		p.closeErr = p.resources.close()
+		p.state.Close()
+	})
+	return p.closeErr
 }
 
 func (p *provider) Info() libmangal.ProviderInfo {
@@ -237,6 +241,11 @@ func (p *provider) VolumeChapters(
 	if err != nil {
 		return nil, fmt.Errorf("%s: chapters of %q vol %s: %w", p.info.ID, v.manga, v, err)
 	}
+	if !p.options.Filter.ShowUnavailableChapters {
+		chapters = slices.DeleteFunc(chapters, func(c mangadata.Chapter) bool {
+			return c.Info().Unavailable != ""
+		})
+	}
 	return chapters, nil
 }
 
@@ -272,10 +281,15 @@ func (p *provider) ChapterPages(
 			}
 
 			if page.Headers == nil {
-				page.Headers = map[string]string{
-					"Referer":    c.URL,
-					"Accept":     "image/webp,image/apng,image/*,*/*;q=0.8",
-					"User-Agent": p.options.UserAgent,
+				page.Headers = make(map[string]string)
+			}
+			for key, value := range map[string]string{
+				"Referer":    c.URL,
+				"Accept":     "image/webp,image/apng,image/*,*/*;q=0.8",
+				"User-Agent": p.options.UserAgent,
+			} {
+				if _, ok := page.Headers[key]; !ok {
+					page.Headers[key] = value
 				}
 			}
 			return &page, nil

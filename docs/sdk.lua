@@ -18,6 +18,7 @@
 --- @field public headless headless Headless browser
 --- @field public http http Package http provides HTTP client implementations. Make HTTP (or HTTPS) requests
 --- @field public log log Logging through mangal's logs, prefixed with the provider id.
+--- @field public options options The user's options, scripts should respect them when the source supports it.
 local sdk = {}
 
 
@@ -1469,6 +1470,16 @@ local log = {}
 --- @param message string 
 function log.print(message)
 end
+
+
+--- The user's options, scripts should respect them when the source supports it.
+--- @class options
+--- @field public nsfw boolean Whether the results can include NSFW content.
+--- @field public language string Language of the mangas/chapters, e.g. "en".
+--- @field public avoid_duplicate_chapters boolean Keep only one chapter per number.
+--- @field public show_unavailable_chapters boolean Whether chapters that can't be downloaded are shown, those with "unavailable" set are dropped otherwise.
+local options = {}
+
 
 
 return sdk

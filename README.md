@@ -103,6 +103,7 @@ Which provides these packages:
 - [util](./lib/util)
 - [urls](./lib/urls)
 - [log](./lib/log)
+- [options](./lib/options)
 
 </details>
 
