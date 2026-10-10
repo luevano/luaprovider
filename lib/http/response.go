@@ -1,10 +1,12 @@
 package http
 
 import (
-	"github.com/luevano/luaprovider/util"
-	lua "github.com/yuin/gopher-lua"
+	"bytes"
 	"io"
 	"net/http"
+
+	"github.com/luevano/luaprovider/util"
+	lua "github.com/yuin/gopher-lua"
 )
 
 const responseTypeName = libName + "_response"
@@ -25,9 +27,11 @@ func responseBody(L *lua.LState) int {
 
 	buffer, err = io.ReadAll(response.Body)
 	if err != nil {
-		L.RaiseError("failed to read response body: %s", err.Error())
+		L.RaiseError("http response body: %s", err)
 		return 0
 	}
+	// so it can be read again
+	response.Body = io.NopCloser(bytes.NewReader(buffer))
 
 	L.Push(lua.LString(buffer))
 	return 1

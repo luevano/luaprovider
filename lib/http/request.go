@@ -3,33 +3,43 @@ package http
 import (
 	"bufio"
 	"bytes"
-	"github.com/luevano/luaprovider/util"
-	"github.com/philippgille/gokv"
-	lua "github.com/yuin/gopher-lua"
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"strings"
+
+	"github.com/luevano/luaprovider/util"
+	"github.com/philippgille/gokv"
+	lua "github.com/yuin/gopher-lua"
 )
 
 const requestTypeName = libName + "_request"
 
-func requestNew(L *lua.LState) int {
-	method := L.CheckString(1)
-	url := L.CheckString(2)
-	body := L.OptString(3, "")
+// newRequestNew: New requests get the user agent as default, scripts can still change it.
+func newRequestNew(userAgent string) lua.LGFunction {
+	return func(L *lua.LState) int {
+		method := L.CheckString(1)
+		url := L.CheckString(2)
+		body := L.OptString(3, "")
 
-	request, err := http.NewRequestWithContext(
-		L.Context(),
-		method,
-		url,
-		strings.NewReader(body),
-	)
-	if err != nil {
-		L.RaiseError("%s", err.Error())
+		request, err := http.NewRequestWithContext(
+			L.Context(),
+			method,
+			url,
+			strings.NewReader(body),
+		)
+		if err != nil {
+			L.RaiseError("http request %s %s: %s", method, url, err)
+		}
+		if userAgent != "" {
+			request.Header.Set("User-Agent", userAgent)
+		}
+
+		util.Push(L, request, requestTypeName)
+		return 1
 	}
-
-	util.Push(L, request, requestTypeName)
-	return 1
 }
 
 func requestHeader(L *lua.LState) int {
@@ -83,54 +93,74 @@ func requestContentLength(L *lua.LState) int {
 func requestSend(L *lua.LState, client *http.Client, store gokv.Store) int {
 	request := util.Check[*http.Request](L, 1)
 
-	dumpedRequest, errRequestDump := httputil.DumpRequestOut(request, true)
-	dumpedRequestString := string(dumpedRequest)
-
-	if errRequestDump == nil {
-		var dumpedResponse []byte
-
-		found, err := store.Get(dumpedRequestString, &dumpedResponse)
-		if err != nil {
-			_ = store.Delete(dumpedRequestString)
-			goto doRequest
+	key, cacheable := cacheKey(request)
+	if cacheable {
+		if response, found := cachedResponse(store, key, request); found {
+			util.Push(L, response, responseTypeName)
+			return 1
 		}
-
-		if !found {
-			goto doRequest
-		}
-
-		response, err := http.ReadResponse(
-			bufio.NewReader(bytes.NewReader(dumpedResponse)),
-			request,
-		)
-
-		if err != nil {
-			_ = store.Delete(dumpedRequestString)
-			goto doRequest
-		}
-
-		util.Push(L, response, responseTypeName)
-		return 1
 	}
 
-doRequest:
 	response, err := client.Do(request)
 	if err != nil {
-		L.RaiseError("%s", err.Error())
+		L.RaiseError("http send %s %s: %s", request.Method, request.URL, err)
 		return 0
 	}
+	// read it all so the connection is released, body() returns it from memory
+	body, err := io.ReadAll(response.Body)
+	response.Body.Close()
+	if err != nil {
+		L.RaiseError("http send %s %s: read body: %s", request.Method, request.URL, err)
+		return 0
+	}
+	response.Body = io.NopCloser(bytes.NewReader(body))
 
-	// only cache the response if it was successful
-	if errRequestDump == nil && response.StatusCode == http.StatusOK {
-		dumpedResponse, err := httputil.DumpResponse(response, true)
-		if err != nil {
-			goto exit
-		}
-
-		_ = store.Set(dumpedRequestString, dumpedResponse)
+	if cacheable && response.StatusCode == http.StatusOK {
+		cacheResponse(store, key, response)
 	}
 
-exit:
 	util.Push(L, response, responseTypeName)
 	return 1
+}
+
+// cacheKey: Only GET and HEAD requests are cached. The key is hashed so cookies and auth headers
+// aren't stored as they are, requests with different cookies still get different keys.
+func cacheKey(request *http.Request) (string, bool) {
+	if request.Method != http.MethodGet && request.Method != http.MethodHead {
+		return "", false
+	}
+	dump, err := httputil.DumpRequestOut(request, true)
+	if err != nil {
+		return "", false
+	}
+	sum := sha256.Sum256(dump)
+	return hex.EncodeToString(sum[:]), true
+}
+
+func cachedResponse(store gokv.Store, key string, request *http.Request) (*http.Response, bool) {
+	var dump []byte
+	found, err := store.Get(key, &dump)
+	if err != nil || !found {
+		return nil, false
+	}
+	response, err := http.ReadResponse(bufio.NewReader(bytes.NewReader(dump)), request)
+	if err != nil {
+		_ = store.Delete(key)
+		return nil, false
+	}
+	return response, true
+}
+
+// cacheResponse: Stores the response without the cookies it sets.
+func cacheResponse(store gokv.Store, key string, response *http.Response) {
+	cookies := response.Header.Values("Set-Cookie")
+	response.Header.Del("Set-Cookie")
+	// DumpResponse puts the body back after reading it
+	dump, err := httputil.DumpResponse(response, true)
+	for _, cookie := range cookies {
+		response.Header.Add("Set-Cookie", cookie)
+	}
+	if err == nil {
+		_ = store.Set(key, dump)
+	}
 }

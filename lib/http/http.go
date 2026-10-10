@@ -13,6 +13,7 @@ const libName = "http"
 type Options struct {
 	HTTPClient *http.Client
 	CacheStore gokv.Store
+	UserAgent  string
 }
 
 func Lib(options Options) *luadoc.Lib {
@@ -245,7 +246,7 @@ func Lib(options Options) *luadoc.Lib {
 			{
 				Name:        "request",
 				Description: "Create a new HTTP request",
-				Value:       requestNew,
+				Value:       newRequestNew(options.UserAgent),
 				Params: []*luadoc.Param{
 					{
 						Name:        "method",
