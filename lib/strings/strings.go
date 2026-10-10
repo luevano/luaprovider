@@ -638,7 +638,7 @@ func split(L *lua.LState) int {
 	s := L.CheckString(1)
 	sep := L.CheckString(2)
 
-	table, _ := util.ToLValue(L, strings.Split(s, sep))
+	table := util.ToLValueOrRaise(L, strings.Split(s, sep))
 	L.Push(table)
 	return 1
 }
@@ -651,7 +651,7 @@ func join(L *lua.LState) int {
 	})
 	sep := L.CheckString(2)
 
-	table, _ := util.ToLValue(L, strings.Join(elems, sep))
+	table := util.ToLValueOrRaise(L, strings.Join(elems, sep))
 	L.Push(table)
 	return 1
 }

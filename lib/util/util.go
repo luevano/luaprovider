@@ -931,7 +931,7 @@ func chunk(L *lua.LState) int {
 	list := checkList(L, 1)
 	size := L.OptInt(2, 1)
 
-	chunks, _ := util.ToLValue(L, lo.Chunk(list, size))
+	chunks := util.ToLValueOrRaise(L, lo.Chunk(list, size))
 	L.Push(chunks)
 	return 1
 }
@@ -940,7 +940,7 @@ func drop(L *lua.LState) int {
 	list := checkList(L, 1)
 	n := L.CheckInt(2)
 
-	dropped, _ := util.ToLValue(L, lo.Drop(list, n))
+	dropped := util.ToLValueOrRaise(L, lo.Drop(list, n))
 	L.Push(dropped)
 	return 1
 }
@@ -949,7 +949,7 @@ func dropRight(L *lua.LState) int {
 	list := checkList(L, 1)
 	n := L.CheckInt(2)
 
-	dropped, _ := util.ToLValue(L, lo.DropRight(list, n))
+	dropped := util.ToLValueOrRaise(L, lo.DropRight(list, n))
 	L.Push(dropped)
 	return 1
 }
@@ -958,7 +958,7 @@ func dropWhile(L *lua.LState) int {
 	list := checkList(L, 1)
 	fn := L.CheckFunction(2)
 
-	dropped, _ := util.ToLValue(L, lo.DropWhile(list, func(v lua.LValue) bool {
+	dropped := util.ToLValueOrRaise(L, lo.DropWhile(list, func(v lua.LValue) bool {
 		L.Push(fn)
 		L.Push(v)
 		L.Call(1, 1)
@@ -972,7 +972,7 @@ func dropRightWhile(L *lua.LState) int {
 	list := checkList(L, 1)
 	fn := L.CheckFunction(2)
 
-	dropped, _ := util.ToLValue(L, lo.DropRightWhile(list, func(v lua.LValue) bool {
+	dropped := util.ToLValueOrRaise(L, lo.DropRightWhile(list, func(v lua.LValue) bool {
 		L.Push(fn)
 		L.Push(v)
 		L.Call(1, 1)
@@ -986,7 +986,7 @@ func filter(L *lua.LState) int {
 	list := checkList(L, 1)
 	fn := L.CheckFunction(2)
 
-	filtered, _ := util.ToLValue(L, lo.Filter(list, func(v lua.LValue, i int) bool {
+	filtered := util.ToLValueOrRaise(L, lo.Filter(list, func(v lua.LValue, i int) bool {
 		L.Push(fn)
 		L.Push(v)
 		L.Push(lua.LNumber(i))
@@ -1007,7 +1007,7 @@ func find(L *lua.LState) int {
 		return L.ToBool(-1)
 	})
 
-	lvalue, _ := util.ToLValue(L, found)
+	lvalue := util.ToLValueOrRaise(L, found)
 	L.Push(lvalue)
 	L.Push(lua.LBool(ok))
 	return 2
@@ -1054,7 +1054,7 @@ func head(L *lua.LState) int {
 		head = list[0]
 	}
 
-	lvalue, _ := util.ToLValue(L, head)
+	lvalue := util.ToLValueOrRaise(L, head)
 	L.Push(lvalue)
 	return 1
 }
@@ -1069,7 +1069,7 @@ func tail(L *lua.LState) int {
 		tail = list[1:]
 	}
 
-	lvalue, _ := util.ToLValue(L, tail)
+	lvalue := util.ToLValueOrRaise(L, tail)
 	L.Push(lvalue)
 	return 1
 }
@@ -1084,7 +1084,7 @@ func initial(L *lua.LState) int {
 		initial = list[:len(list)-1]
 	}
 
-	lvalue, _ := util.ToLValue(L, initial)
+	lvalue := util.ToLValueOrRaise(L, initial)
 	L.Push(lvalue)
 	return 1
 }
@@ -1100,7 +1100,7 @@ func take(L *lua.LState) int {
 		taken = list[:n]
 	}
 
-	t, _ := util.ToLValue(L, taken)
+	t := util.ToLValueOrRaise(L, taken)
 	L.Push(t)
 	return 1
 }
@@ -1119,7 +1119,7 @@ func takeWhile(L *lua.LState) int {
 		}
 	}
 
-	l, _ := util.ToLValue(L, list)
+	l := util.ToLValueOrRaise(L, list)
 	L.Push(l)
 	return 1
 }
@@ -1134,7 +1134,7 @@ func last(L *lua.LState) int {
 		last = list[len(list)-1]
 	}
 
-	lvalue, _ := util.ToLValue(L, last)
+	lvalue := util.ToLValueOrRaise(L, last)
 	L.Push(lvalue)
 	return 1
 }
@@ -1142,7 +1142,7 @@ func last(L *lua.LState) int {
 func reverse(L *lua.LState) int {
 	list := checkList(L, 1)
 
-	reversed, _ := util.ToLValue(L, lo.Reverse(list))
+	reversed := util.ToLValueOrRaise(L, lo.Reverse(list))
 	L.Push(reversed)
 	return 1
 }
@@ -1152,7 +1152,7 @@ func slice(L *lua.LState) int {
 	start := L.CheckInt(2)
 	end := L.OptInt(3, len(list))
 
-	sliced, _ := util.ToLValue(L, lo.Slice(list, start, end))
+	sliced := util.ToLValueOrRaise(L, lo.Slice(list, start, end))
 	L.Push(sliced)
 	return 1
 }
@@ -1177,7 +1177,7 @@ func sort(L *lua.LState) int {
 		return L.ToInt(-1)
 	})
 
-	sorted, _ := util.ToLValue(L, list)
+	sorted := util.ToLValueOrRaise(L, list)
 	L.Push(sorted)
 	return 1
 }
@@ -1300,7 +1300,7 @@ func reject(L *lua.LState) int {
 	list := checkList(L, 1)
 	fn := L.CheckFunction(2)
 
-	rejected, _ := util.ToLValue(L, lo.Reject(list, func(v lua.LValue, i int) bool {
+	rejected := util.ToLValueOrRaise(L, lo.Reject(list, func(v lua.LValue, i int) bool {
 		L.Push(fn)
 		L.Push(v)
 		L.Push(lua.LNumber(i))
@@ -1314,7 +1314,7 @@ func reject(L *lua.LState) int {
 func sample(L *lua.LState) int {
 	list := checkList(L, 1)
 
-	sampled, _ := util.ToLValue(L, lo.Sample(list))
+	sampled := util.ToLValueOrRaise(L, lo.Sample(list))
 	L.Push(sampled)
 	return 1
 }
@@ -1323,7 +1323,7 @@ func samples(L *lua.LState) int {
 	list := checkList(L, 1)
 	n := L.CheckInt(2)
 
-	sampled, _ := util.ToLValue(L, lo.Samples(list, n))
+	sampled := util.ToLValueOrRaise(L, lo.Samples(list, n))
 	L.Push(sampled)
 	return 1
 }
@@ -1331,7 +1331,7 @@ func samples(L *lua.LState) int {
 func shuffle(L *lua.LState) int {
 	list := checkList(L, 1)
 
-	shuffled, _ := util.ToLValue(L, lo.Shuffle(list))
+	shuffled := util.ToLValueOrRaise(L, lo.Shuffle(list))
 	L.Push(shuffled)
 	return 1
 }
@@ -1372,7 +1372,7 @@ func minBy(L *lua.LState) int {
 	list := checkList(L, 1)
 	fn := L.CheckFunction(2)
 
-	min, _ := util.ToLValue(L, lo.MinBy(list, func(a, b lua.LValue) bool {
+	min := util.ToLValueOrRaise(L, lo.MinBy(list, func(a, b lua.LValue) bool {
 		L.Push(fn)
 		L.Push(a)
 		L.Push(b)
@@ -1388,7 +1388,7 @@ func maxBy(L *lua.LState) int {
 	list := checkList(L, 1)
 	fn := L.CheckFunction(2)
 
-	max, _ := util.ToLValue(L, lo.MaxBy(list, func(a, b lua.LValue) bool {
+	max := util.ToLValueOrRaise(L, lo.MaxBy(list, func(a, b lua.LValue) bool {
 		L.Push(fn)
 		L.Push(a)
 		L.Push(b)

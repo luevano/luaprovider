@@ -21,18 +21,20 @@ func NewTable(L *lua.LState, fields map[string]lua.LValue, funcs map[string]lua.
 }
 
 func FromLTable(table *lua.LTable) (map[string]any, error) {
-	var err error
+	var firstErr error
 	result := make(map[string]any)
 	table.ForEach(func(key lua.LValue, value lua.LValue) {
-		if key.Type() == lua.LTString {
-			result[string(key.(lua.LString))], err = FromLValue(value)
-			if err != nil {
-				return
-			}
+		if firstErr != nil || key.Type() != lua.LTString {
+			return
 		}
+		converted, err := FromLValue(value)
+		if err != nil {
+			firstErr = fmt.Errorf("key %q: %w", key, err)
+			return
+		}
+		result[string(key.(lua.LString))] = converted
 	})
-
-	return result, nil
+	return result, firstErr
 }
 
 func FromLValue(value lua.LValue) (any, error) {
@@ -52,6 +54,15 @@ func FromLValue(value lua.LValue) (any, error) {
 	default:
 		return nil, fmt.Errorf("unsupported type: %s", value.Type())
 	}
+}
+
+// ToLValueOrRaise: Like ToLValue, but raises a lua error (seen by the script) if it can't convert.
+func ToLValueOrRaise(L *lua.LState, value any) lua.LValue {
+	lvalue, err := ToLValue(L, value)
+	if err != nil {
+		L.RaiseError("convert %T to a lua value: %s", value, err)
+	}
+	return lvalue
 }
 
 func ToLValue(L *lua.LState, value any) (lua.LValue, error) {
