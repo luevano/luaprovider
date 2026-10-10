@@ -1,8 +1,6 @@
 package util
 
 import (
-	"sync"
-
 	"slices"
 
 	luadoc "github.com/luevano/gopher-luadoc"
@@ -102,31 +100,6 @@ func Lib() *luadoc.Lib {
 				},
 			},
 			{
-				Name:        "drop",
-				Description: "Drop n elements from the beginning list",
-				Value:       drop,
-				Generics:    []string{T},
-				Params: []*luadoc.Param{
-					{
-						Name:        "list",
-						Description: "List to drop from",
-						Type:        luadoc.List(T),
-					},
-					{
-						Name:        "n",
-						Description: "Number of elements to drop",
-						Type:        luadoc.Number,
-					},
-				},
-				Returns: []*luadoc.Param{
-					{
-						Name:        "dropped",
-						Description: "List of dropped elements",
-						Type:        luadoc.List(T),
-					},
-				},
-			},
-			{
 				Name:        "drop_right",
 				Description: "Drop n elements from the end of list",
 				Value:       dropRight,
@@ -149,20 +122,6 @@ func Lib() *luadoc.Lib {
 						Description: "List of dropped elements",
 						Type:        luadoc.List(T),
 					},
-				},
-			},
-			{
-				Name:        "drop_while",
-				Description: "Drop elements from the beginning of list while predicate is true",
-				Value:       dropWhile,
-				Generics:    []string{T},
-				Params: []*luadoc.Param{
-					{
-						Name:        "list",
-						Description: "List to drop from",
-						Type:        luadoc.List(T),
-					},
-					predicate(T),
 				},
 			},
 			{
@@ -595,7 +554,7 @@ func Lib() *luadoc.Lib {
 			},
 			{
 				Name:        "map_async",
-				Description: "Maps a function over a table values asynchronously",
+				Description: "Same as map, the function can't run concurrently in lua",
 				Value:       mapAsync,
 				Generics:    []string{T, G, Q},
 				Params: []*luadoc.Param{
@@ -914,7 +873,104 @@ func Lib() *luadoc.Lib {
 					},
 				},
 			},
-			// TODO: do the rest
+			{
+				Name:        "some_by",
+				Description: "Checks if the predicate is true for any element of list",
+				Value:       someBy,
+				Generics:    []string{T},
+				Params: []*luadoc.Param{
+					{
+						Name:        "list",
+						Description: "List to check",
+						Type:        luadoc.List(T),
+					},
+					predicate(T),
+				},
+				Returns: []*luadoc.Param{
+					{
+						Name: "result",
+						Type: luadoc.Boolean,
+					},
+				},
+			},
+			{
+				Name:        "every_by",
+				Description: "Checks if the predicate is true for all elements of list",
+				Value:       everyBy,
+				Generics:    []string{T},
+				Params: []*luadoc.Param{
+					{
+						Name:        "list",
+						Description: "List to check",
+						Type:        luadoc.List(T),
+					},
+					predicate(T),
+				},
+				Returns: []*luadoc.Param{
+					{
+						Name: "result",
+						Type: luadoc.Boolean,
+					},
+				},
+			},
+			{
+				Name:        "sample",
+				Description: "Random element of list",
+				Value:       sample,
+				Generics:    []string{T},
+				Params: []*luadoc.Param{
+					{
+						Name: "list",
+						Type: luadoc.List(T),
+					},
+				},
+				Returns: []*luadoc.Param{
+					{
+						Name: "element",
+						Type: T,
+					},
+				},
+			},
+			{
+				Name:        "samples",
+				Description: "n random unique elements of list",
+				Value:       samples,
+				Generics:    []string{T},
+				Params: []*luadoc.Param{
+					{
+						Name: "list",
+						Type: luadoc.List(T),
+					},
+					{
+						Name: "n",
+						Type: luadoc.Number,
+					},
+				},
+				Returns: []*luadoc.Param{
+					{
+						Name: "elements",
+						Type: luadoc.List(T),
+					},
+				},
+			},
+			{
+				Name:        "shuffle",
+				Description: "Shuffles list",
+				Value:       shuffle,
+				Generics:    []string{T},
+				Params: []*luadoc.Param{
+					{
+						Name: "list",
+						Type: luadoc.List(T),
+					},
+				},
+				Returns: []*luadoc.Param{
+					{
+						Name: "shuffled",
+						Type: luadoc.List(T),
+					},
+				},
+			},
 		},
 	}
 }
@@ -959,10 +1015,8 @@ func dropWhile(L *lua.LState) int {
 	fn := L.CheckFunction(2)
 
 	dropped := util.ToLValueOrRaise(L, lo.DropWhile(list, func(v lua.LValue) bool {
-		L.Push(fn)
-		L.Push(v)
-		L.Call(1, 1)
-		return L.ToBool(-1)
+		result := call(L, fn, v)
+		return lua.LVAsBool(result)
 	}))
 	L.Push(dropped)
 	return 1
@@ -973,10 +1027,8 @@ func dropRightWhile(L *lua.LState) int {
 	fn := L.CheckFunction(2)
 
 	dropped := util.ToLValueOrRaise(L, lo.DropRightWhile(list, func(v lua.LValue) bool {
-		L.Push(fn)
-		L.Push(v)
-		L.Call(1, 1)
-		return L.ToBool(-1)
+		result := call(L, fn, v)
+		return lua.LVAsBool(result)
 	}))
 	L.Push(dropped)
 	return 1
@@ -987,11 +1039,8 @@ func filter(L *lua.LState) int {
 	fn := L.CheckFunction(2)
 
 	filtered := util.ToLValueOrRaise(L, lo.Filter(list, func(v lua.LValue, i int) bool {
-		L.Push(fn)
-		L.Push(v)
-		L.Push(lua.LNumber(i))
-		L.Call(2, 1)
-		return L.ToBool(-1)
+		result := call(L, fn, v, lua.LNumber(i))
+		return lua.LVAsBool(result)
 	}))
 	L.Push(filtered)
 	return 1
@@ -1001,10 +1050,8 @@ func find(L *lua.LState) int {
 	list := checkList(L, 1)
 	fn := L.CheckFunction(2)
 	found, ok := lo.Find(list, func(v lua.LValue) bool {
-		L.Push(fn)
-		L.Push(v)
-		L.Call(1, 1)
-		return L.ToBool(-1)
+		result := call(L, fn, v)
+		return lua.LVAsBool(result)
 	})
 
 	lvalue := util.ToLValueOrRaise(L, found)
@@ -1017,10 +1064,8 @@ func findIndex(L *lua.LState) int {
 	list := checkList(L, 1)
 	fn := L.CheckFunction(2)
 	_, index, ok := lo.FindIndexOf(list, func(v lua.LValue) bool {
-		L.Push(fn)
-		L.Push(v)
-		L.Call(1, 1)
-		return L.ToBool(-1)
+		result := call(L, fn, v)
+		return lua.LVAsBool(result)
 	})
 
 	L.Push(lua.LNumber(index))
@@ -1032,10 +1077,8 @@ func findLastIndex(L *lua.LState) int {
 	list := checkList(L, 1)
 	fn := L.CheckFunction(2)
 	_, index, ok := lo.FindLastIndexOf(list, func(v lua.LValue) bool {
-		L.Push(fn)
-		L.Push(v)
-		L.Call(1, 1)
-		return L.ToBool(-1)
+		result := call(L, fn, v)
+		return lua.LVAsBool(result)
 	})
 
 	L.Push(lua.LNumber(index))
@@ -1110,10 +1153,8 @@ func takeWhile(L *lua.LState) int {
 	fn := L.CheckFunction(2)
 
 	for i, v := range list {
-		L.Push(fn)
-		L.Push(v)
-		L.Call(1, 1)
-		if !L.ToBool(-1) {
+		result := call(L, fn, v)
+		if !lua.LVAsBool(result) {
 			list = list[:i]
 			break
 		}
@@ -1158,23 +1199,24 @@ func slice(L *lua.LState) int {
 }
 
 func sort(L *lua.LState) int {
-	lessThan := L.NewFunction(func(L *lua.LState) int {
-		a := L.CheckInt(1)
-		b := L.CheckInt(2)
-
-		L.Push(lua.LBool(a < b))
-		return 1
-	})
-
 	list := checkList(L, 1)
-	fn := L.OptFunction(2, lessThan)
+	fn := L.OptFunction(2, nil)
 
-	slices.SortFunc(list, func(i, j lua.LValue) int {
-		L.Push(fn)
-		L.Push(i)
-		L.Push(j)
-		L.Call(2, 1)
-		return L.ToInt(-1)
+	lessThan := func(a, b lua.LValue) bool {
+		if fn == nil {
+			return L.LessThan(a, b)
+		}
+		return lua.LVAsBool(call(L, fn, a, b))
+	}
+	slices.SortStableFunc(list, func(a, b lua.LValue) int {
+		switch {
+		case lessThan(a, b):
+			return -1
+		case lessThan(b, a):
+			return 1
+		default:
+			return 0
+		}
 	})
 
 	sorted := util.ToLValueOrRaise(L, list)
@@ -1189,46 +1231,17 @@ func map_(L *lua.LState) int {
 	mapped := L.NewTable()
 
 	table.ForEach(func(key lua.LValue, value lua.LValue) {
-		L.Push(fn)
-		L.Push(value)
-		L.Push(key)
-		L.Call(2, 1)
-		mapped.RawSet(key, L.Get(-1))
+		result := call(L, fn, value, key)
+		mapped.RawSet(key, result)
 	})
 
 	L.Push(mapped)
 	return 1
 }
 
+// mapAsync: Same as map, a lua state can't be used from several goroutines.
 func mapAsync(L *lua.LState) int {
-	mapped := L.CheckTable(1)
-	fn := L.CheckFunction(2)
-
-	m := make(map[lua.LValue]lua.LValue)
-	mapped.ForEach(func(key lua.LValue, value lua.LValue) {
-		m[key] = value
-	})
-
-	mapped = L.NewTable()
-
-	var wg sync.WaitGroup
-	wg.Add(len(m))
-
-	for k, v := range m {
-		go func(k, v lua.LValue) {
-			defer wg.Done()
-			L.Push(fn)
-			L.Push(v)
-			L.Push(k)
-			L.Call(2, 1)
-			mapped.RawSet(k, L.Get(-1))
-		}(k, v)
-	}
-
-	wg.Wait()
-
-	L.Push(mapped)
-	return 1
+	return map_(L)
 }
 
 func forEach(L *lua.LState) int {
@@ -1236,10 +1249,7 @@ func forEach(L *lua.LState) int {
 	fn := L.CheckFunction(2)
 
 	lo.ForEach(list, func(v lua.LValue, i int) {
-		L.Push(fn)
-		L.Push(v)
-		L.Push(lua.LNumber(i))
-		L.Call(2, 0)
+		call(L, fn, v, lua.LNumber(i))
 	})
 
 	return 0
@@ -1250,10 +1260,8 @@ func containsBy(L *lua.LState) int {
 	fn := L.CheckFunction(2)
 
 	contains := lo.ContainsBy(list, func(v lua.LValue) bool {
-		L.Push(fn)
-		L.Push(v)
-		L.Call(1, 1)
-		return L.ToBool(-1)
+		result := call(L, fn, v)
+		return lua.LVAsBool(result)
 	})
 
 	L.Push(lua.LBool(contains))
@@ -1266,12 +1274,8 @@ func reduce(L *lua.LState) int {
 	initial := L.CheckAny(3)
 
 	r := lo.Reduce(list, func(acc lua.LValue, v lua.LValue, i int) lua.LValue {
-		L.Push(fn)
-		L.Push(acc)
-		L.Push(v)
-		L.Push(lua.LNumber(i))
-		L.Call(3, 1)
-		return L.Get(-1)
+		result := call(L, fn, acc, v, lua.LNumber(i))
+		return result
 	}, initial)
 
 	L.Push(r)
@@ -1284,12 +1288,8 @@ func reduceRight(L *lua.LState) int {
 	initial := L.CheckAny(3)
 
 	r := lo.ReduceRight(list, func(acc lua.LValue, v lua.LValue, i int) lua.LValue {
-		L.Push(fn)
-		L.Push(acc)
-		L.Push(v)
-		L.Push(lua.LNumber(i))
-		L.Call(3, 1)
-		return L.Get(-1)
+		result := call(L, fn, acc, v, lua.LNumber(i))
+		return result
 	}, initial)
 
 	L.Push(r)
@@ -1301,11 +1301,8 @@ func reject(L *lua.LState) int {
 	fn := L.CheckFunction(2)
 
 	rejected := util.ToLValueOrRaise(L, lo.Reject(list, func(v lua.LValue, i int) bool {
-		L.Push(fn)
-		L.Push(v)
-		L.Push(lua.LNumber(i))
-		L.Call(2, 1)
-		return L.ToBool(-1)
+		result := call(L, fn, v, lua.LNumber(i))
+		return lua.LVAsBool(result)
 	}))
 	L.Push(rejected)
 	return 1
@@ -1341,10 +1338,8 @@ func someBy(L *lua.LState) int {
 	fn := L.CheckFunction(2)
 
 	L.Push(lua.LBool(lo.SomeBy(list, func(v lua.LValue) bool {
-		L.Push(fn)
-		L.Push(v)
-		L.Call(2, 1)
-		return L.ToBool(-1)
+		result := call(L, fn, v)
+		return lua.LVAsBool(result)
 	})))
 	return 1
 }
@@ -1354,10 +1349,8 @@ func everyBy(L *lua.LState) int {
 	fn := L.CheckFunction(2)
 
 	L.Push(lua.LBool(lo.EveryBy(list, func(v lua.LValue) bool {
-		L.Push(fn)
-		L.Push(v)
-		L.Call(2, 1)
-		return L.ToBool(-1)
+		result := call(L, fn, v)
+		return lua.LVAsBool(result)
 	})))
 	return 1
 }
@@ -1373,11 +1366,8 @@ func minBy(L *lua.LState) int {
 	fn := L.CheckFunction(2)
 
 	min := util.ToLValueOrRaise(L, lo.MinBy(list, func(a, b lua.LValue) bool {
-		L.Push(fn)
-		L.Push(a)
-		L.Push(b)
-		L.Call(2, 1)
-		return L.ToBool(-1)
+		result := call(L, fn, a, b)
+		return lua.LVAsBool(result)
 	}))
 
 	L.Push(min)
@@ -1389,13 +1379,22 @@ func maxBy(L *lua.LState) int {
 	fn := L.CheckFunction(2)
 
 	max := util.ToLValueOrRaise(L, lo.MaxBy(list, func(a, b lua.LValue) bool {
-		L.Push(fn)
-		L.Push(a)
-		L.Push(b)
-		L.Call(2, 1)
-		return L.ToBool(-1)
+		result := call(L, fn, a, b)
+		return lua.LVAsBool(result)
 	}))
 
 	L.Push(max)
 	return 1
+}
+
+// call: Calls fn with args and returns its first result, leaving the stack as it was.
+func call(L *lua.LState, fn *lua.LFunction, args ...lua.LValue) lua.LValue {
+	L.Push(fn)
+	for _, arg := range args {
+		L.Push(arg)
+	}
+	L.Call(len(args), 1)
+	result := L.Get(-1)
+	L.Pop(1)
+	return result
 }
