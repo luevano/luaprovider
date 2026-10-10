@@ -1,12 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/sumneko/vscode-lua/master/setting/schema.json",
   "runtime": {
-    "version": "Lua 5.2",
+    "version": "Lua 5.1",
     "builtin": {
       "ffi": "disable",
       "os": "disable",
-      "io": "disable",
-      "debug": "disable",
+            "debug": "disable",
       "bit": "disable",
       "bit32": "disable"
     }

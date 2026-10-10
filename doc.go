@@ -1,5 +1,7 @@
 package luaprovider
 
+//go:generate go run ./cmd/lua-provider-gen -sdk -dir docs
+
 import (
 	_ "embed"
 

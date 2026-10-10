@@ -19,7 +19,7 @@ It uses [native go implementation of the Lua interpreter](https://github.com/yui
 - Built-in Lua VM without CGO with
   [gopher-lua](https://github.com/yuin/gopher-lua)
 - Batteries-included library
-- Ships with [CLI helper tools](./cmd) for generating templates & probing.
+- Ships with a [CLI helper tool](./cmd/lua-provider-gen) for generating templates.
 - Luadoc generation which enables autocompletion for you IDE
 - Script template generation
 
@@ -37,7 +37,7 @@ It uses [native go implementation of the Lua interpreter](https://github.com/yui
 
 See [examples of scripts](https://github.com/luevano/saturno).
 
-See [SDK documentation](https://github.com/mangalorg/luaprovider/wiki/sdk.lua) (still in the original repo).
+See the [SDK documentation](./docs/sdk.lua).
 
 Scripts must look like this:
 
@@ -66,6 +66,8 @@ Notice the four required global functions
 - `VolumeChapters` - gets chapters of the given volume.
 - `ChapterPages` - gets pages of the given chapter.
 
+See the [template](./template.lua) for the fields each of them can return.
+
 ---
 
 The scripts can load sdk with
@@ -76,7 +78,7 @@ local sdk = require("sdk")
 
 Which provides these packages:
 
-[Documentation](https://github.com/mangalorg/luaprovider/wiki/sdk.lua) (still in the original repo).
+[Documentation](./docs/sdk.lua).
 
 <details>
 <summary>Packages</summary>
@@ -99,12 +101,14 @@ Which provides these packages:
 - [strings](./lib/strings)
 - [levenshtein](./lib/levenshtein)
 - [util](./lib/util)
+- [urls](./lib/urls)
+- [log](./lib/log)
 
 </details>
 
 ### Script Development
 
-Install [helper tools](./cmd)
+Install the [helper tool](./cmd/lua-provider-gen)
 
 ```bash
 just install-cmd
