@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/mangadata"
@@ -149,5 +150,43 @@ func TestLoadErrors(t *testing.T) {
 		if _, err := loader.Load(context.Background()); err == nil || !strings.Contains(err.Error(), want) {
 			t.Errorf("%q: wanted %q, got %v", script, want, err)
 		}
+	}
+}
+
+func TestJSRunStopsOnCancel(t *testing.T) {
+	p := loadTestProvider(t, `
+local sdk = require("sdk")
+function SearchMangas(query)
+	sdk.js.vm():run("while (true) {}")
+	return {}
+end
+function MangaVolumes() return {} end
+function VolumeChapters() return {} end
+function ChapterPages() return {} end
+`)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+	start := time.Now()
+	_, err := p.SearchMangas(ctx, "x")
+	if err == nil || !strings.Contains(err.Error(), "context deadline exceeded") {
+		t.Errorf("wanted the deadline error, got %v", err)
+	}
+	if elapsed := time.Since(start); elapsed > 2*time.Second {
+		t.Errorf("should stop right after the deadline, took %s", elapsed)
+	}
+}
+
+func TestScriptLog(t *testing.T) {
+	p := loadTestProvider(t, `
+local sdk = require("sdk")
+sdk.log.print("loaded")
+function SearchMangas() return {} end
+function MangaVolumes() return {} end
+function VolumeChapters() return {} end
+function ChapterPages() return {} end
+`)
+	if len(p.log.backlog) != 1 || p.log.backlog[0] != "test: loaded" {
+		t.Errorf("wanted the script's message in the backlog, got %q", p.log.backlog)
 	}
 }

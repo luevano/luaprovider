@@ -13,8 +13,8 @@ func elementInput(state *lua.LState) int {
 	element := util.Check[*rod.Element](state, 1)
 	text := state.CheckString(2)
 
-	if err := element.Input(text); err != nil {
-		state.RaiseError("%s", err.Error())
+	if err := element.Context(state.Context()).Input(text); err != nil {
+		state.RaiseError("headless element input: %s", err)
 	}
 
 	return 0
@@ -24,8 +24,8 @@ func elementClick(state *lua.LState) int {
 	element := util.Check[*rod.Element](state, 1)
 	count := state.OptNumber(2, 1)
 
-	if err := element.Click(proto.InputMouseButtonLeft, int(count)); err != nil {
-		state.RaiseError("%s", err.Error())
+	if err := element.Context(state.Context()).Click(proto.InputMouseButtonLeft, int(count)); err != nil {
+		state.RaiseError("headless element click: %s", err)
 	}
 
 	return 0
@@ -34,9 +34,9 @@ func elementClick(state *lua.LState) int {
 func elementHTML(state *lua.LState) int {
 	element := util.Check[*rod.Element](state, 1)
 
-	HTML, err := element.HTML()
+	HTML, err := element.Context(state.Context()).HTML()
 	if err != nil {
-		state.RaiseError("%s", err.Error())
+		state.RaiseError("headless element html: %s", err)
 		return 0
 	}
 

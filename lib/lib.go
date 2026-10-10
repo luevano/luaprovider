@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"io"
 	"net/http"
 	"time"
 
@@ -30,6 +31,8 @@ type Options struct {
 	UserAgent string
 	// Log: Logs a message of the provider, used by the log library.
 	Log func(format string, a ...any)
+	// Track: Resources (e.g. headless browsers) to close with the provider.
+	Track func(io.Closer)
 }
 
 func DefaultOptions() *Options {
@@ -37,6 +40,7 @@ func DefaultOptions() *Options {
 		HTTPClient: &http.Client{Timeout: time.Minute},
 		CacheStore: syncmap.NewStore(syncmap.DefaultOptions),
 		Log:        func(string, ...any) {},
+		Track:      func(io.Closer) {},
 	}
 }
 
@@ -57,7 +61,7 @@ func Lib(L *lua.LState, options *Options) *luadoc.Lib {
 			timeLib.Lib(),
 			urls.Lib(),
 			encoding.Lib(L),
-			headless.Lib(),
+			headless.Lib(options.Track),
 			httpLib.Lib(httpLib.Options{
 				HTTPClient: options.HTTPClient,
 				CacheStore: options.CacheStore,

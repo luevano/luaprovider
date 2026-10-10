@@ -85,14 +85,16 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 		options.UserAgent = defaultUserAgent
 	}
 	log := newProviderLogger(l.info.ID + ": ")
+	res := &resources{}
 
-	state, store, err := newState(options, l.info.ID, log)
+	state, store, err := newState(options, l.info.ID, log, res)
 	if err != nil {
 		return nil, err
 	}
 	// don't leave the state and the cache store open if the script fails
 	defer func() {
 		if err != nil {
+			res.close()
 			state.Close()
 			store.Close()
 		}
@@ -113,11 +115,12 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 	}
 
 	p := &provider{
-		info:    l.info,
-		options: options,
-		log:     log,
-		state:   state,
-		store:   store,
+		info:      l.info,
+		options:   options,
+		log:       log,
+		resources: res,
+		state:     state,
+		store:     store,
 	}
 	for name, fn := range map[string]**lua.LFunction{
 		methodSearchMangas:   &p.fnSearchMangas,

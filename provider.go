@@ -23,10 +23,11 @@ import (
 var _ libmangal.Provider = (*provider)(nil)
 
 type provider struct {
-	store   gokv.Store
-	info    libmangal.ProviderInfo
-	options Options
-	log     *providerLogger
+	store     gokv.Store
+	info      libmangal.ProviderInfo
+	options   Options
+	log       *providerLogger
+	resources *resources
 
 	// a lua state isn't safe for concurrent use, calls take turns
 	mu    sync.Mutex
@@ -43,8 +44,9 @@ func (p *provider) String() string {
 }
 
 func (p *provider) Close() error {
+	err := p.resources.close()
 	p.state.Close()
-	return p.store.Close()
+	return errors.Join(err, p.store.Close())
 }
 
 func (p *provider) Info() libmangal.ProviderInfo {

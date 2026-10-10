@@ -1,14 +1,24 @@
 package headless
 
-import luadoc "github.com/luevano/gopher-luadoc"
+import (
+	"io"
+
+	luadoc "github.com/luevano/gopher-luadoc"
+)
 
 const libName = "headless"
 
-func Lib() *luadoc.Lib {
+// Lib: Browsers are passed to track, to be closed with the provider.
+func Lib(track func(io.Closer)) *luadoc.Lib {
 	classBrowser := &luadoc.Class{
 		Name:        browserTypeName,
 		Description: "",
 		Methods: []*luadoc.Method{
+			{
+				Name:        "close",
+				Description: "Close the browser, else it's closed with the provider",
+				Value:       browserClose,
+			},
 			{
 				Name:        "page",
 				Description: "Visit the page",
@@ -35,6 +45,11 @@ func Lib() *luadoc.Lib {
 		Name:        pageTypeName,
 		Description: "",
 		Methods: []*luadoc.Method{
+			{
+				Name:        "close",
+				Description: "Close the page",
+				Value:       pageClose,
+			},
 			{
 				Name:        "html",
 				Description: "",
@@ -124,7 +139,7 @@ func Lib() *luadoc.Lib {
 			{
 				Name:        "browser",
 				Description: "Creates a new headless browser",
-				Value:       newBrowser,
+				Value:       newNewBrowser(track),
 				Returns: []*luadoc.Param{
 					{
 						Name:        "browser",
