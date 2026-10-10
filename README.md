@@ -19,9 +19,8 @@ It uses [native go implementation of the Lua interpreter](https://github.com/yui
 - Built-in Lua VM without CGO with
   [gopher-lua](https://github.com/yuin/gopher-lua)
 - Batteries-included library
-- Ships with a [CLI helper tool](./cmd/lua-provider-gen) for generating templates.
-- Luadoc generation which enables autocompletion for you IDE
-- Script template generation
+- Ships with a [CLI helper tool](./cmd/lua-provider-gen) for generating script templates
+- Luadoc generation which enables autocompletion for your IDE
 
 > **Note**
 >
@@ -30,6 +29,31 @@ It uses [native go implementation of the Lua interpreter](https://github.com/yui
 > nice completions for your IDE
 >
 > [VSCode extension](https://marketplace.visualstudio.com/items?itemName=sumneko.lua)
+
+## Usage
+
+```go
+script, err := os.ReadFile("main.lua")
+if err != nil {
+	panic(err)
+}
+info := libmangal.ProviderInfo{ID: "weebcentral", Name: "Weeb Central", Version: "0.3.1"}
+
+loader, err := luaprovider.NewLoader(script, info, luaprovider.DefaultOptions())
+if err != nil {
+	panic(err)
+}
+client, err := libmangal.NewClient(loader, libmangal.DefaultClientOptions())
+if err != nil {
+	panic(err)
+}
+defer client.Close()
+
+mangas, err := client.SearchMangas("dandadan")
+```
+
+[mangal](https://github.com/luevano/mangal) loads scripts from its providers directory, with the info
+from a `mangal.toml` next to each script (see [saturno](https://github.com/luevano/saturno)).
 
 ## Scripts
 
