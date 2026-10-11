@@ -13,7 +13,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-func newState(options Options, providerID string, log *providerLogger, resources *resources) *lua.LState {
+func newState(options Options, store gokv.Store, log *providerLogger, resources *resources) *lua.LState {
 	libs := []lua.LGFunction{
 		lua.OpenBase,
 		lua.OpenTable,
@@ -32,10 +32,6 @@ func newState(options Options, providerID string, log *providerLogger, resources
 	for _, injectLib := range libs {
 		injectLib(state)
 	}
-
-	store := &lazyStore{open: func() (gokv.Store, error) {
-		return options.CacheStore(providerID, providerID)
-	}}
 
 	lib.Preload(state, &lib.Options{
 		HTTPClient: options.HTTPClient,

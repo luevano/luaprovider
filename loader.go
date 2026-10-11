@@ -49,7 +49,7 @@ func DefaultFilterOptions() FilterOptions {
 }
 
 func DefaultOptions() Options {
-	// the store is opened on each use, it has to be the same one to cache anything
+	// shared by every provider loaded with these options
 	store := syncmap.NewStore(syncmap.DefaultOptions)
 	return Options{
 		HTTPClient: &http.Client{Timeout: time.Minute},
@@ -113,7 +113,14 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 	log := newProviderLogger(l.info.ID + ": ")
 	res := &resources{}
 
-	state := newState(options, l.info.ID, log, res)
+	// opened once, closed with the provider
+	store, err := options.CacheStore(l.info.ID, l.info.ID)
+	if err != nil {
+		return nil, fmt.Errorf("open cache: %w", err)
+	}
+	res.track(store)
+
+	state := newState(options, store, log, res)
 	// don't leave the state open if the script fails
 	defer func() {
 		if err != nil {

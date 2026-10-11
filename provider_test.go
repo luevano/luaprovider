@@ -245,7 +245,7 @@ assert(options.language == "es" and options.nsfw, "options")
 	}
 }
 
-// countingStore counts how many times it's open at once.
+// countingStore counts how many times it's open.
 type countingStore struct {
 	gokv.Store
 	open *int
@@ -256,12 +256,13 @@ func (s countingStore) Close() error {
 	return nil
 }
 
-func TestCacheStoreIsOnlyOpenWhileUsed(t *testing.T) {
-	var open int
+func TestCacheStoreOpenedOnce(t *testing.T) {
+	var open, opens int
 	store := syncmap.NewStore(syncmap.DefaultOptions)
 	options := DefaultOptions()
 	options.CacheStore = func(string, string) (gokv.Store, error) {
 		open++
+		opens++
 		return countingStore{Store: store, open: &open}, nil
 	}
 
@@ -273,9 +274,13 @@ func TestCacheStoreIsOnlyOpenWhileUsed(t *testing.T) {
 	p := loadTestProviderWith(t, fmt.Sprintf(`
 local sdk = require("sdk")
 sdk.http.request("GET", %q):send()
-`, server.URL)+testScript, options)
-	if open != 0 {
-		t.Errorf("the cache store is still open %d times after loading", open)
+sdk.http.request("GET", %q):send()
+`, server.URL, server.URL)+testScript, options)
+	if opens != 1 || open != 1 {
+		t.Errorf("opened %d times (%d still open) after loading, want 1 (1)", opens, open)
 	}
 	p.Close()
+	if open != 0 {
+		t.Errorf("still open %d times after closing the provider", open)
+	}
 }
