@@ -92,6 +92,8 @@ Notice the four required global functions
 
 See the [template](./template.lua) for the fields each of them can return.
 
+Errors raised with `error()` are plain messages. For HTTP errors, `response:check()` raises one the app can tell apart (not found, rate limited), and `send` already does for 429.
+
 ---
 
 The scripts can load sdk with
