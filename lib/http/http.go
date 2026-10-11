@@ -174,6 +174,18 @@ func Lib(options Options) *luadoc.Lib {
 				},
 			},
 			{
+				Name:        "check",
+				Description: "Raise an error if the status isn't 2xx (mangal can tell a 404 or a 429 from other errors), else return the response. Send already raises for 429",
+				Value:       responseCheck,
+				Returns: []*luadoc.Param{
+					{
+						Name:        "response",
+						Description: "The response",
+						Type:        responseTypeName,
+					},
+				},
+			},
+			{
 				Name:        "status",
 				Description: "Get response status",
 				Value:       responseStatus,

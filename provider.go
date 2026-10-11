@@ -15,6 +15,7 @@ import (
 	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
+	"github.com/luevano/luaprovider/util"
 	"github.com/samber/lo"
 	"github.com/yuin/gluamapper"
 	lua "github.com/yuin/gopher-lua"
@@ -89,7 +90,7 @@ func loadItems[Input intoLValue, Output any](
 		return arg.IntoLValue()
 	})...)
 	if err != nil {
-		return nil, err
+		return nil, util.GoError(err)
 	}
 
 	output, ok := p.state.Get(-1).(*lua.LTable)

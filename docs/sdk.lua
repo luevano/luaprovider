@@ -1447,6 +1447,11 @@ end
 function http_response:body()
 end
 
+--- Raise an error if the status isn't 2xx (mangal can tell a 404 or a 429 from other errors), else return the response. Send already raises for 429
+--- @return http_response response The response
+function http_response:check()
+end
+
 --- Get response status
 --- @return number status Status
 function http_response:status()

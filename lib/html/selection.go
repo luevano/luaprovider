@@ -1,6 +1,8 @@
 package html
 
 import (
+	"fmt"
+
 	"strings"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
@@ -31,7 +33,7 @@ func selectionEach(L *lua.LState) int {
 		L.Push(lua.LNumber(i))
 
 		if err := L.PCall(2, 0, nil); err != nil {
-			L.RaiseError("html each: %s", err)
+			util.Raise(L, fmt.Errorf("html each: %w", util.GoError(err)))
 			return
 		}
 	}), selectionTypeName)
@@ -228,7 +230,7 @@ func selectionMap(L *lua.LState) int {
 		L.Push(callback)
 		util.Push(L, selection, selectionTypeName)
 		if err := L.PCall(1, 1, nil); err != nil {
-			L.RaiseError("html map: %s", err)
+			util.Raise(L, fmt.Errorf("html map: %w", util.GoError(err)))
 			return
 		}
 

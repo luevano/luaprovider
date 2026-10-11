@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -103,7 +104,7 @@ func requestSend(L *lua.LState, client *http.Client, store gokv.Store) int {
 
 	response, err := client.Do(request)
 	if err != nil {
-		L.RaiseError("http send %s %s: %s", request.Method, request.URL, err)
+		util.Raise(L, fmt.Errorf("http send %s %s: %w", request.Method, request.URL, err))
 		return 0
 	}
 	// read it all so the connection is released, body() returns it from memory
@@ -114,6 +115,10 @@ func requestSend(L *lua.LState, client *http.Client, store gokv.Store) int {
 		return 0
 	}
 	response.Body = io.NopCloser(bytes.NewReader(body))
+	if response.StatusCode == http.StatusTooManyRequests {
+		util.Raise(L, newError(request, response))
+		return 0
+	}
 
 	if cacheable && response.StatusCode == http.StatusOK {
 		cacheResponse(store, key, response)

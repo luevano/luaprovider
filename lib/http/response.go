@@ -17,6 +17,17 @@ func responseStatus(L *lua.LState) int {
 	return 1
 }
 
+// responseCheck raises an error for a non-2xx status, matching ErrNotFound for 404.
+func responseCheck(L *lua.LState) int {
+	response := util.Check[*http.Response](L, 1)
+	if response.StatusCode < 200 || response.StatusCode > 299 {
+		util.Raise(L, newError(response.Request, response))
+		return 0
+	}
+	L.Push(L.Get(1))
+	return 1
+}
+
 func responseBody(L *lua.LState) int {
 	response := util.Check[*http.Response](L, 1)
 
