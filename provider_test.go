@@ -60,6 +60,9 @@ func loadTestProviderWith(t *testing.T, script string, options Options) *provide
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { p.Close() })
+	if p, ok := p.(mangaByIDProvider); ok {
+		return p.provider
+	}
 	return p.(*provider)
 }
 
@@ -282,5 +285,62 @@ sdk.http.request("GET", %q):send()
 	p.Close()
 	if open != 0 {
 		t.Errorf("still open %d times after closing the provider", open)
+	}
+}
+
+func TestMangaByID(t *testing.T) {
+	info := libmangal.ProviderInfo{ID: "test", Name: "Test", Version: "0.1.0"}
+	load := func(script string) libmangal.Provider {
+		t.Helper()
+		loader, err := NewLoader([]byte(script), info, DefaultOptions())
+		if err != nil {
+			t.Fatal(err)
+		}
+		p, err := loader.Load(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { p.Close() })
+		return p
+	}
+
+	if _, ok := load(testScript).(libmangal.MangaByIDProvider); ok {
+		t.Error("a script without MangaByID shouldn't implement MangaByIDProvider")
+	}
+
+	server := httptest.NewServer(http.NotFoundHandler())
+	defer server.Close()
+	p, ok := load(testScript + fmt.Sprintf(`
+local sdk = require("sdk")
+function MangaByID(id)
+	if id == "404" then
+		sdk.http.request("GET", %q):send():check()
+	elseif id == "fail" then
+		error("broken")
+	elseif id ~= "1" then
+		return nil
+	end
+	return {id = id, title = "Manga " .. id}
+end
+`, server.URL)).(libmangal.MangaByIDProvider)
+	if !ok {
+		t.Fatal("a script with MangaByID should implement MangaByIDProvider")
+	}
+	ctx := context.Background()
+
+	manga, found, err := p.MangaByID(ctx, "1")
+	if err != nil || !found || manga.Info().Title != "Manga 1" {
+		t.Fatalf("got %v, %v, %v", manga, found, err)
+	}
+	if volumes, err := p.(libmangal.Provider).MangaVolumes(ctx, manga); err != nil || len(volumes) != 1 {
+		t.Errorf("volumes of the manga: %v, %v", volumes, err)
+	}
+	for _, id := range []string{"2", "404"} {
+		if manga, found, err := p.MangaByID(ctx, id); err != nil || found || manga != nil {
+			t.Errorf("id %s: %v, %v, %v, want not found", id, manga, found, err)
+		}
+	}
+	if _, _, err := p.MangaByID(ctx, "fail"); err == nil || !strings.Contains(err.Error(), `test: manga "fail": `) {
+		t.Errorf("error: %v", err)
 	}
 }

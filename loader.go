@@ -95,6 +95,10 @@ func (l loader) Load(ctx context.Context) (lm.Provider, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load %s: %w", l.info.ID, err)
 	}
+	// only scripts with MangaByID implement lm.MangaByIDProvider
+	if p.fnMangaByID != nil {
+		return mangaByIDProvider{p}, nil
+	}
 	return p, nil
 }
 
@@ -160,6 +164,13 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 		if *fn, found = state.GetGlobal(name).(*lua.LFunction); !found {
 			return nil, fmt.Errorf("missing function %s", name)
 		}
+	}
+	switch fn := state.GetGlobal(methodMangaByID).(type) {
+	case *lua.LFunction:
+		p.fnMangaByID = fn
+	case *lua.LNilType:
+	default:
+		return nil, fmt.Errorf("%s is a %s, not a function", methodMangaByID, fn.Type())
 	}
 	return p, nil
 }

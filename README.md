@@ -92,6 +92,10 @@ Notice the four required global functions
 
 See the [template](./template.lua) for the fields each of them can return.
 
+Optionally, `MangaByID(id)` gets the manga with the given id (the `id` its search results have),
+or returns `nil` if there's none (a not found `response:check()` error counts as none too). Apps
+use it to get a manga again without searching; without it they search and match the id.
+
 Errors raised with `error()` are plain messages. For HTTP errors, `response:check()` raises one the app can tell apart (not found, rate limited), and `send` already does for 429.
 
 ---

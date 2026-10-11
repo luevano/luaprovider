@@ -5,4 +5,6 @@ const (
 	methodMangaVolumes   = "MangaVolumes"
 	methodVolumeChapters = "VolumeChapters"
 	methodChapterPages   = "ChapterPages"
+	// optional
+	methodMangaByID = "MangaByID"
 )

@@ -13,6 +13,13 @@ function SearchMangas(query)
   return {}
 end
 
+-- Optional: the manga with the given id (as SearchMangas returns it), nil if there's none.
+-- ---@param id string
+-- ---@return Manga?
+-- function MangaByID(id)
+--   return nil
+-- end
+
 ---@param manga Manga
 ---@return Volume[]
 function MangaVolumes(manga)

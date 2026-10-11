@@ -40,6 +40,60 @@ type provider struct {
 	fnMangaVolumes,
 	fnVolumeChapters,
 	fnChapterPages *lua.LFunction
+	// nil if the script doesn't define it
+	fnMangaByID *lua.LFunction
+}
+
+var _ libmangal.MangaByIDProvider = mangaByIDProvider{}
+
+// mangaByIDProvider is a provider whose script defines MangaByID.
+type mangaByIDProvider struct {
+	*provider
+}
+
+// MangaByID calls the script's MangaByID(id), which returns the manga or nil if there's none.
+// A not found http error (response:check()) is no manga too.
+func (p mangaByIDProvider) MangaByID(ctx context.Context, id string) (mangadata.Manga, bool, error) {
+	p.log.log("getting manga with id %q", id)
+	manga, found, err := p.mangaByID(ctx, id)
+	if errors.Is(err, ErrNotFound) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, fmt.Errorf("%s: manga %q: %w", p.info.ID, id, err)
+	}
+	return manga, found, nil
+}
+
+func (p mangaByIDProvider) mangaByID(ctx context.Context, id string) (mangadata.Manga, bool, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	top := p.state.GetTop()
+	defer p.state.SetTop(top)
+
+	p.state.SetContext(ctx)
+	err := p.state.CallByParam(lua.P{
+		Fn:      p.fnMangaByID,
+		NRet:    1,
+		Protect: true,
+	}, lua.LString(id))
+	if err != nil {
+		return nil, false, util.GoError(err)
+	}
+
+	switch output := p.state.Get(-1).(type) {
+	case *lua.LNilType:
+		return nil, false, nil
+	case *lua.LTable:
+		manga, err := p.toManga(output)
+		if err != nil {
+			return nil, false, err
+		}
+		return manga, true, nil
+	default:
+		return nil, false, fmt.Errorf("expected a table or nil, got %s", output.Type())
+	}
 }
 
 func (p *provider) String() string {
@@ -142,22 +196,8 @@ func (p *provider) SearchMangas(
 		ctx,
 		p,
 		p.fnSearchMangas,
-		func(i int, table *lua.LTable) (mangadata.Manga, error) {
-			var manga luaManga
-			if err := glMapper.Map(table, &manga); err != nil {
-				return nil, err
-			}
-			if manga.ID == "" {
-				return nil, errors.New("missing id")
-			}
-			if manga.Title == "" {
-				return nil, errors.New("missing title")
-			}
-
-			var meta metadata.Metadata = manga.newMetadata(p.info.ID)
-			manga.metadata = &meta
-			manga.table = table
-			return &manga, nil
+		func(_ int, table *lua.LTable) (mangadata.Manga, error) {
+			return p.toManga(table)
 		},
 		luaString(query),
 	)
@@ -165,6 +205,25 @@ func (p *provider) SearchMangas(
 		return nil, fmt.Errorf("%s: search %q: %w", p.info.ID, query, err)
 	}
 	return mangas, nil
+}
+
+// toManga converts a manga table the script returned.
+func (p *provider) toManga(table *lua.LTable) (*luaManga, error) {
+	var manga luaManga
+	if err := glMapper.Map(table, &manga); err != nil {
+		return nil, err
+	}
+	if manga.ID == "" {
+		return nil, errors.New("missing id")
+	}
+	if manga.Title == "" {
+		return nil, errors.New("missing title")
+	}
+
+	var meta metadata.Metadata = manga.newMetadata(p.info.ID)
+	manga.metadata = &meta
+	manga.table = table
+	return &manga, nil
 }
 
 func (p *provider) MangaVolumes(
