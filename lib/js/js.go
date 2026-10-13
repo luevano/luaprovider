@@ -176,7 +176,7 @@ func Lib() *luadoc.Lib {
 			},
 			{
 				Name:        "set",
-				Description: "Sets the value of the given property on the global object. It will convert the given Lua value to a JavaScript value.",
+				Description: "Sets the value of the given property on the global object. It will convert the given Lua value to a JavaScript value; only plain Lua values (no userdata).",
 				Value:       vmSet,
 				Params: []*luadoc.Param{
 					{

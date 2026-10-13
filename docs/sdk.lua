@@ -371,7 +371,7 @@ end
 function js_vm:get(name)
 end
 
---- Sets the value of the given property on the global object. It will convert the given Lua value to a JavaScript value.
+--- Sets the value of the given property on the global object. It will convert the given Lua value to a JavaScript value; only plain Lua values (no userdata).
 --- @param name string The name of the property.
 --- @param value any The value to set.
 function js_vm:set(name, value)

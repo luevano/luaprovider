@@ -182,3 +182,25 @@ assert(("x: " .. err):find("json decode:"), "concat")
 		t.Fatal(err)
 	}
 }
+
+func TestJSSetOnlyTakesPlainValues(t *testing.T) {
+	err := run(t, `
+local sdk = require("sdk")
+local vm = sdk.js.vm()
+vm:set("t", {a = 1, b = {c = 2}})
+assert(vm:run("t.a + t.b.c"):to_string() == "3", "plain table")
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for name, value := range map[string]string{
+		"userdata":        `sdk.http.request("GET", "http://localhost")`,
+		"nested userdata": `{req = sdk.http.request("GET", "http://localhost")}`,
+	} {
+		err := run(t, `local sdk = require("sdk"); sdk.js.vm():set("v", `+value+`)`)
+		if err == nil || !strings.Contains(util.GoError(err).Error(), "js set") {
+			t.Errorf("%s: wanted a js set error, got %v", name, err)
+		}
+	}
+}

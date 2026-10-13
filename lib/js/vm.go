@@ -81,6 +81,10 @@ func vmSet(L *lua.LState) int {
 	name := L.CheckString(2)
 	lvalue := L.CheckAny(3)
 
+	if err := checkPlain(lvalue, map[*lua.LTable]bool{}); err != nil {
+		util.Raise(L, fmt.Errorf("js set %q: %w", name, err))
+		return 0
+	}
 	value, err := util.FromLValue(lvalue)
 	if err != nil {
 		util.Raise(L, fmt.Errorf("js set %q: %w", name, err))
@@ -94,4 +98,25 @@ func vmSet(L *lua.LState) int {
 	}
 
 	return 0
+}
+
+// checkPlain: Go objects (userdata) can't go into the vm, otto would expose their methods.
+func checkPlain(lvalue lua.LValue, seen map[*lua.LTable]bool) error {
+	switch v := lvalue.(type) {
+	case *lua.LUserData:
+		return errors.New("userdata can't be passed to javascript")
+	case *lua.LTable:
+		if seen[v] {
+			return nil
+		}
+		seen[v] = true
+		var err error
+		v.ForEach(func(_, value lua.LValue) {
+			if err == nil {
+				err = checkPlain(value, seen)
+			}
+		})
+		return err
+	}
+	return nil
 }
