@@ -85,7 +85,7 @@ func (p mangaByIDProvider) mangaByID(ctx context.Context, id string) (mangadata.
 		Protect: true,
 	}, lua.LString(id))
 	if err != nil {
-		return nil, false, util.GoError(err)
+		return nil, false, callError(ctx, err)
 	}
 
 	switch output := p.state.Get(-1).(type) {
@@ -104,6 +104,15 @@ func (p mangaByIDProvider) mangaByID(ctx context.Context, id string) (mangadata.
 
 func (p *provider) String() string {
 	return p.info.Name
+}
+
+// callError is the error of a lua call: ctx's if it's done (lua only has its message), else
+// the Go error the script raised, if any.
+func callError(ctx context.Context, err error) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	return util.GoError(err)
 }
 
 // ErrClosed is returned by the calls to a closed provider.
@@ -177,7 +186,7 @@ func loadItems[Input intoLValue, Output any](
 		return arg.IntoLValue()
 	})...)
 	if err != nil {
-		return nil, util.GoError(err)
+		return nil, callError(ctx, err)
 	}
 
 	output, ok := p.state.Get(-1).(*lua.LTable)

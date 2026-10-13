@@ -56,3 +56,23 @@ end
 		t.Errorf("after Close: %v, want ErrClosed", err)
 	}
 }
+
+func TestCancelledCallReturnsTheContextError(t *testing.T) {
+	p := loadTestProvider(t, `
+function SearchMangas(query)
+	while true do end
+end
+`+"function MangaVolumes"+strings.SplitN(testScript, "function MangaVolumes", 2)[1])
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	if _, err := p.SearchMangas(ctx, "x"); !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("timed out: %v, want context.DeadlineExceeded", err)
+	}
+
+	ctx, cancel = context.WithCancel(context.Background())
+	time.AfterFunc(50*time.Millisecond, cancel)
+	if _, err := p.SearchMangas(ctx, "x"); !errors.Is(err, context.Canceled) {
+		t.Errorf("cancelled: %v, want context.Canceled", err)
+	}
+}

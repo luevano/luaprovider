@@ -144,7 +144,7 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 		Protect: true,
 	})
 	if err != nil {
-		return nil, err
+		return nil, callError(ctx, err)
 	}
 
 	p := &provider{
