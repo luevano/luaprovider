@@ -84,3 +84,15 @@ assert(#util.filter(list, function(v) return true end) == 100000, "filter")
 		t.Fatal(err)
 	}
 }
+
+func TestReplaceAllFuncPopsTheResults(t *testing.T) {
+	script := `
+local sdk = require("sdk")
+local re = sdk.regexp.compile("a")
+local out = re:replace_all_func(string.rep("a", 30000), function(m) return "b" end)
+assert(out == string.rep("b", 30000), "replaced")
+`
+	if err := run(t, script); err != nil {
+		t.Fatal(err)
+	}
+}

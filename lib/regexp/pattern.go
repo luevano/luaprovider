@@ -81,7 +81,9 @@ func regexpReplaceAllFunc(L *lua.LState) int {
 		L.Push(replacer)
 		L.Push(lua.LString(match))
 		L.Call(1, 1)
-		return L.CheckString(-1)
+		replacement := L.CheckString(-1)
+		L.Pop(1)
+		return replacement
 	})
 
 	L.Push(lua.LString(result))
