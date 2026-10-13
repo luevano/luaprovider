@@ -18,7 +18,9 @@ It uses [native go implementation of the Lua interpreter](https://github.com/yui
 >
 > Provider scripts are code: they run with your network access (http, headless browsers) and the
 > SDK libraries. Scripts get no `io`/`os` and `require` only loads files from the provider's own
-> package paths, but only install providers you trust.
+> package paths, but only install providers you trust. Requests aren't limited to the internet:
+> a script can also reach `localhost` and your LAN (a router, a FlareSolverr, other local
+> services).
 
 ## Features
 
