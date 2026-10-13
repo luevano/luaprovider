@@ -130,3 +130,27 @@ assert(#sdk.util.take({}, 1) == 0, "take from empty")
 		t.Fatal(err)
 	}
 }
+
+func TestJSON(t *testing.T) {
+	script := `
+local sdk = require("sdk")
+local shared = {a = 1}
+local out = sdk.encoding.json.encode({x = shared, y = shared})
+assert(out == '{"x":{"a":1},"y":{"a":1}}', "shared table: " .. out)
+
+local loop = {}
+loop.self = loop
+assert(not pcall(sdk.encoding.json.encode, loop), "a table inside itself")
+
+for _ = 1, 20 do
+	local keys = {}
+	for k in pairs(sdk.encoding.json.decode('{"d": 1, "b": 2, "c": 3, "a": 4}')) do
+		table.insert(keys, k)
+	end
+	assert(table.concat(keys) == "abcd", "keys in order: " .. table.concat(keys))
+end
+`
+	if err := run(t, script); err != nil {
+		t.Fatal(err)
+	}
+}

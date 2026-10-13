@@ -3,6 +3,8 @@ package json
 import (
 	"encoding/json"
 	"errors"
+	"maps"
+	"slices"
 
 	luadoc "github.com/luevano/gopher-luadoc"
 	lua "github.com/yuin/gopher-lua"
@@ -120,7 +122,9 @@ func (j jsonValue) MarshalJSON() (data []byte, err error) {
 		if j.visited[converted] {
 			return nil, errNested
 		}
+		// only the tables being encoded, a table can appear twice if it's not inside itself
 		j.visited[converted] = true
+		defer delete(j.visited, converted)
 
 		key, value := converted.Next(lua.LNil)
 
@@ -196,8 +200,9 @@ func decodeValue(L *lua.LState, value any) lua.LValue {
 		return arr
 	case map[string]any:
 		tbl := L.CreateTable(0, len(converted))
-		for key, item := range converted {
-			tbl.RawSetH(lua.LString(key), decodeValue(L, item))
+		// tables iterate in insertion order, sorted keys make it the same every time
+		for _, key := range slices.Sorted(maps.Keys(converted)) {
+			tbl.RawSetH(lua.LString(key), decodeValue(L, converted[key]))
 		}
 		return tbl
 	case nil:
