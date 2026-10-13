@@ -1476,6 +1476,11 @@ local log = {}
 function log.print(message)
 end
 
+--- Log a message and show it as what the provider is doing now (e.g. "page 3 of 5", "rate limited, retrying in 10s"), on mangal's status line or spinner.
+--- @param message string 
+function log.status(message)
+end
+
 
 --- The user's options, scripts should respect them when the source supports it.
 --- @class options

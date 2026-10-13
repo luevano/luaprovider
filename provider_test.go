@@ -12,6 +12,7 @@ import (
 
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/mangadata"
+	"github.com/luevano/libmangal/progress"
 	"github.com/philippgille/gokv"
 	"github.com/philippgille/gokv/syncmap"
 )
@@ -342,5 +343,26 @@ end
 	}
 	if _, _, err := p.MangaByID(ctx, "fail"); err == nil || !strings.Contains(err.Error(), `test: manga "fail": `) {
 		t.Errorf("error: %v", err)
+	}
+}
+
+func TestLogStatus(t *testing.T) {
+	p := loadTestProvider(t, `
+local log = require("sdk").log
+function SearchMangas(query)
+	log.status("page 2 of 5")
+	return {}
+end
+function MangaVolumes(manga) return {} end
+function VolumeChapters(volume) return {} end
+function ChapterPages(chapter) return {} end
+`)
+	var got []progress.Status
+	ctx := progress.WithReporter(context.Background(), func(s progress.Status) { got = append(got, s) })
+	if _, err := p.SearchMangas(ctx, "x"); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].Source != "test" || got[0].Message != "Test: page 2 of 5" {
+		t.Errorf("reported %+v", got)
 	}
 }

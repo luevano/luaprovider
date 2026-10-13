@@ -38,6 +38,7 @@ func newState(options Options, store gokv.Store, log *providerLogger, resources 
 		CacheStore: store,
 		UserAgent:  options.UserAgent,
 		Log:        log.log,
+		Status:     log.status,
 		Track:      resources.track,
 		Filter:     options.Filter,
 	})

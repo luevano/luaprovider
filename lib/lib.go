@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"time"
@@ -32,6 +33,8 @@ type Options struct {
 	UserAgent string
 	// Log: Logs a message of the provider, used by the log library.
 	Log func(format string, a ...any)
+	// Status: Logs a message and shows it as the provider's status (see libmangal's progress).
+	Status func(ctx context.Context, message string)
 	// Track: Resources (e.g. headless browsers) to close with the provider.
 	Track func(io.Closer)
 	// Filter: The user's filters, read by scripts from the options library.
@@ -43,6 +46,7 @@ func DefaultOptions() *Options {
 		HTTPClient: &http.Client{Timeout: time.Minute},
 		CacheStore: syncmap.NewStore(syncmap.DefaultOptions),
 		Log:        func(string, ...any) {},
+		Status:     func(context.Context, string) {},
 		Track:      func(io.Closer) {},
 		Filter:     optionsLib.Filter{Language: "en"},
 	}
@@ -65,13 +69,13 @@ func Lib(L *lua.LState, options *Options) *luadoc.Lib {
 			timeLib.Lib(),
 			urls.Lib(),
 			encoding.Lib(L),
-			headless.Lib(options.Track),
+			headless.Lib(options.Track, options.Log, options.Status),
 			httpLib.Lib(httpLib.Options{
 				HTTPClient: options.HTTPClient,
 				CacheStore: options.CacheStore,
 				UserAgent:  options.UserAgent,
 			}),
-			log.Lib(options.Log),
+			log.Lib(options.Log, options.Status),
 			optionsLib.Lib(options.Filter),
 		},
 	}

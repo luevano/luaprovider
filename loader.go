@@ -114,7 +114,7 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 	if options.CacheStore == nil {
 		options.CacheStore = defaults.CacheStore
 	}
-	log := newProviderLogger(l.info.ID + ": ")
+	log := newProviderLogger(l.info)
 	res := &resources{}
 
 	// opened once, closed with the provider
