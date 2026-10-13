@@ -12,13 +12,13 @@ import (
 var _ mangadata.Manga = (*luaManga)(nil)
 
 type luaManga struct {
-	Title  string `gluamapper:"title"`
-	URL    string `gluamapper:"url"`
-	ID     string `gluamapper:"id"`
-	Cover  string `gluamapper:"cover"`
-	Banner string `gluamapper:"banner"`
+	Title  string `lua:"title"`
+	URL    string `lua:"url"`
+	ID     string `lua:"id"`
+	Cover  string `lua:"cover"`
+	Banner string `lua:"banner"`
 	// LuaMetadata: Optional, see luaMetadata.
-	LuaMetadata *luaMetadata `gluamapper:"metadata"`
+	LuaMetadata *luaMetadata `lua:"metadata"`
 
 	metadata *metadata.Metadata
 	table    *lua.LTable
@@ -56,32 +56,32 @@ func (m *luaManga) SetMetadata(metadata metadata.Metadata) {
 
 // luaMetadata: Manga metadata a provider can return, same names as the libmangal metadata json.
 type luaMetadata struct {
-	EnglishTitle      string   `gluamapper:"english_title"`
-	RomajiTitle       string   `gluamapper:"romaji_title"`
-	NativeTitle       string   `gluamapper:"native_title"`
-	Synonyms          []string `gluamapper:"synonyms"`
-	CommunityScore    float32  `gluamapper:"community_score"`
-	Summary           string   `gluamapper:"summary"`
-	CoverImage        string   `gluamapper:"cover_image"`
-	BannerImage       string   `gluamapper:"banner_image"`
-	TagList           []string `gluamapper:"tag_list"`
-	GenreList         []string `gluamapper:"genre_list"`
-	CharacterList     []string `gluamapper:"character_list"`
-	AuthorList        []string `gluamapper:"author_list"`
-	ArtistList        []string `gluamapper:"artist_list"`
-	TranslatorList    []string `gluamapper:"translator_list"`
-	LettererList      []string `gluamapper:"letterer_list"`
-	DateStart         string   `gluamapper:"date_start"` // "YYYY-MM-DD"
-	DateEnd           string   `gluamapper:"date_end"`   // "YYYY-MM-DD"
-	ProviderPublisher string   `gluamapper:"provider_publisher"`
-	PublicationStatus string   `gluamapper:"publication_status"` // e.g. "RELEASING", "FINISHED"
-	PublicationFormat string   `gluamapper:"publication_format"`
-	CountryOfOrigin   string   `gluamapper:"country_of_origin"`
-	ChapterCount      int      `gluamapper:"chapter_count"`
-	ExtraNotes        string   `gluamapper:"extra_notes"`
-	SourceURL         string   `gluamapper:"source_url"`
-	ProviderID        string   `gluamapper:"provider_id"`
-	ProviderIDCode    string   `gluamapper:"provider_id_code"`
+	EnglishTitle      string   `lua:"english_title"`
+	RomajiTitle       string   `lua:"romaji_title"`
+	NativeTitle       string   `lua:"native_title"`
+	Synonyms          []string `lua:"synonyms"`
+	CommunityScore    float32  `lua:"community_score"`
+	Summary           string   `lua:"summary"`
+	CoverImage        string   `lua:"cover_image"`
+	BannerImage       string   `lua:"banner_image"`
+	TagList           []string `lua:"tag_list"`
+	GenreList         []string `lua:"genre_list"`
+	CharacterList     []string `lua:"character_list"`
+	AuthorList        []string `lua:"author_list"`
+	ArtistList        []string `lua:"artist_list"`
+	TranslatorList    []string `lua:"translator_list"`
+	LettererList      []string `lua:"letterer_list"`
+	DateStart         string   `lua:"date_start"` // "YYYY-MM-DD"
+	DateEnd           string   `lua:"date_end"`   // "YYYY-MM-DD"
+	ProviderPublisher string   `lua:"provider_publisher"`
+	PublicationStatus string   `lua:"publication_status"` // e.g. "RELEASING", "FINISHED"
+	PublicationFormat string   `lua:"publication_format"`
+	CountryOfOrigin   string   `lua:"country_of_origin"`
+	ChapterCount      int      `lua:"chapter_count"`
+	ExtraNotes        string   `lua:"extra_notes"`
+	SourceURL         string   `lua:"source_url"`
+	ProviderID        string   `lua:"provider_id"`
+	ProviderIDCode    string   `lua:"provider_id_code"`
 }
 
 // newMetadata builds the manga metadata, from its metadata table if the provider returned one.

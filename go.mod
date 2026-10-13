@@ -14,7 +14,6 @@ require (
 	github.com/philippgille/gokv/syncmap v0.7.0
 	github.com/robertkrimen/otto v0.5.1
 	github.com/samber/lo v1.53.0
-	github.com/yuin/gluamapper v0.0.0-20150323120927-d836955830e7
 	github.com/yuin/gopher-lua v1.1.2
 	mvdan.cc/xurls/v2 v2.6.0
 )
@@ -24,7 +23,6 @@ require (
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/hhrutter/tiff v1.0.7 // indirect
 	github.com/mattn/go-runewidth v0.0.31 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pdfcpu/pdfcpu v0.16.1 // indirect
 	github.com/philippgille/gokv/encoding v0.7.0 // indirect
 	github.com/philippgille/gokv/util v0.7.0 // indirect

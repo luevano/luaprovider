@@ -17,7 +17,6 @@ import (
 	luahttp "github.com/luevano/luaprovider/lib/http"
 	"github.com/luevano/luaprovider/util"
 	"github.com/samber/lo"
-	"github.com/yuin/gluamapper"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -223,11 +222,6 @@ func (l luaString) IntoLValue() lua.LValue {
 	return lua.LString(l)
 }
 
-var (
-	glOpt    gluamapper.Option = gluamapper.Option{NameFunc: gluamapper.Id, TagName: "gluamapper", ErrorUnused: false}
-	glMapper gluamapper.Mapper = *gluamapper.NewMapper(glOpt)
-)
-
 func (p *provider) SearchMangas(
 	ctx context.Context,
 	query string,
@@ -252,7 +246,7 @@ func (p *provider) SearchMangas(
 // toManga converts a manga table the script returned.
 func (p *provider) toManga(table *lua.LTable) (*luaManga, error) {
 	var manga luaManga
-	if err := glMapper.Map(table, &manga); err != nil {
+	if err := mapTable(table, &manga); err != nil {
 		return nil, err
 	}
 	if manga.ID == "" {
@@ -284,7 +278,7 @@ func (p *provider) MangaVolumes(
 		p.fnMangaVolumes,
 		func(_ int, table *lua.LTable) (mangadata.Volume, error) {
 			var volume luaVolume
-			if err := glMapper.Map(table, &volume); err != nil {
+			if err := mapTable(table, &volume); err != nil {
 				return nil, err
 			}
 
@@ -319,7 +313,7 @@ func (p *provider) VolumeChapters(
 		p.fnVolumeChapters,
 		func(_ int, table *lua.LTable) (mangadata.Chapter, error) {
 			var chapter luaChapter
-			if err := glMapper.Map(table, &chapter); err != nil {
+			if err := mapTable(table, &chapter); err != nil {
 				return nil, err
 			}
 			if chapter.Title == "" {
@@ -367,7 +361,7 @@ func (p *provider) ChapterPages(
 		p.fnChapterPages,
 		func(_ int, table *lua.LTable) (mangadata.Page, error) {
 			var page luaPage
-			if err := glMapper.Map(table, &page); err != nil {
+			if err := mapTable(table, &page); err != nil {
 				return nil, err
 			}
 			page.chapter = c

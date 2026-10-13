@@ -11,13 +11,13 @@ import (
 var _ mangadata.Chapter = (*luaChapter)(nil)
 
 type luaChapter struct {
-	Title           string  `gluamapper:"title"`
-	URL             string  `gluamapper:"url"`
-	Number          float32 `gluamapper:"number"`
-	Date            string  `gluamapper:"date"` // "YYYY-MM-DD", today if empty
-	ScanlationGroup string  `gluamapper:"scanlation_group"`
+	Title           string  `lua:"title"`
+	URL             string  `lua:"url"`
+	Number          float32 `lua:"number"`
+	Date            string  `lua:"date"` // "YYYY-MM-DD", today if empty
+	ScanlationGroup string  `lua:"scanlation_group"`
 	// Unavailable: Why it can't be downloaded (e.g. "external"), empty if it can.
-	Unavailable string `gluamapper:"unavailable"`
+	Unavailable string `lua:"unavailable"`
 
 	date   metadata.Date
 	volume *luaVolume

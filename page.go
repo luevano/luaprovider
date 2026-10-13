@@ -11,13 +11,13 @@ var fileExtensionRegex = regexp.MustCompile(`^\.[a-zA-Z0-9][a-zA-Z0-9.]*[a-zA-Z0
 var _ mangadata.Page = (*luaPage)(nil)
 
 type luaPage struct {
-	Ext string `json:"extension" gluamapper:"extension"`
+	Ext string `json:"extension" lua:"extension"`
 
 	// URL is the url of the page image
-	URL string `json:"url" gluamapper:"url"`
+	URL string `json:"url" lua:"url"`
 
-	Headers map[string]string `json:"headers" gluamapper:"headers"`
-	Cookies map[string]string `json:"cookies" gluamapper:"cookies"`
+	Headers map[string]string `json:"headers" lua:"headers"`
+	Cookies map[string]string `json:"cookies" lua:"cookies"`
 
 	chapter *luaChapter
 }

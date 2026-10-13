@@ -11,7 +11,7 @@ import (
 var _ mangadata.Volume = (*luaVolume)(nil)
 
 type luaVolume struct {
-	Number float32 `gluamapper:"number"`
+	Number float32 `lua:"number"`
 
 	manga *luaManga
 	table *lua.LTable
