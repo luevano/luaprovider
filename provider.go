@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"slices"
-	"strings"
 	"sync"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
+	luahttp "github.com/luevano/luaprovider/lib/http"
 	"github.com/luevano/luaprovider/util"
 	"github.com/samber/lo"
 	"github.com/yuin/gluamapper"
@@ -443,7 +443,43 @@ func (p *provider) GetPageImage(
 	return image, nil
 }
 
+// pageRetries is how many times a page is tried again after a 429, waiting Retry-After
+// (at most maxRetryWait) or pageRetryWait, doubled each time.
+const (
+	pageRetries  = 3
+	maxRetryWait = time.Minute
+)
+
+var pageRetryWait = 5 * time.Second
+
 func (p *provider) getPageImage(
+	ctx context.Context,
+	page luaPage,
+) ([]byte, error) {
+	wait := pageRetryWait
+	for retry := 0; ; retry++ {
+		image, err := p.getPageImageOnce(ctx, page)
+		var rateLimit *RateLimitError
+		if !errors.As(err, &rateLimit) || retry == pageRetries {
+			return image, err
+		}
+		after := rateLimit.RetryAfter
+		if after == 0 {
+			after = wait
+			wait *= 2
+		}
+		after = min(after, maxRetryWait)
+		p.log.status(ctx, fmt.Sprintf("page of chapter %q: 429 too many requests, retry %d/%d in %s", page.chapter, retry+1, pageRetries, after.Round(time.Second)))
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(after):
+		}
+	}
+}
+
+// getPageImageOnce gets the page, an *HTTPError or *RateLimitError for an error status.
+func (p *provider) getPageImageOnce(
 	ctx context.Context,
 	page luaPage,
 ) ([]byte, error) {
@@ -467,7 +503,7 @@ func (p *provider) getPageImage(
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GET %s: %d %s", page.URL, response.StatusCode, strings.ToLower(http.StatusText(response.StatusCode)))
+		return nil, luahttp.NewError(request, response)
 	}
 
 	return io.ReadAll(response.Body)
