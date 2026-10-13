@@ -44,9 +44,19 @@ end
 		t.Errorf("missing: %v, want a not found HTTPError", err)
 	}
 
+	// only a 429 looks like a rate limit to apps that check for RetryAfterDuration
+	var retrier interface{ RetryAfterDuration() time.Duration }
+	if errors.As(err, &retrier) {
+		t.Errorf("missing: %v shouldn't have a RetryAfterDuration", err)
+	}
+
 	_, err = p.SearchMangas(context.Background(), "limited")
-	if !errors.Is(err, ErrRateLimited) || !errors.As(err, &httpErr) || httpErr.RetryAfterDuration() != 3*time.Second {
+	if !errors.Is(err, ErrRateLimited) || !errors.As(err, &retrier) || retrier.RetryAfterDuration() != 3*time.Second {
 		t.Errorf("limited: %v, want rate limited for 3s", err)
+	}
+	var rateLimitErr *RateLimitError
+	if !errors.As(err, &rateLimitErr) || errors.Is(err, ErrNotFound) {
+		t.Errorf("limited: %v, want a RateLimitError", err)
 	}
 
 	mangas, err := p.SearchMangas(context.Background(), "caught")

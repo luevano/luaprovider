@@ -21,7 +21,7 @@ func responseStatus(L *lua.LState) int {
 func responseCheck(L *lua.LState) int {
 	response := util.Check[*http.Response](L, 1)
 	if response.StatusCode < 200 || response.StatusCode > 299 {
-		util.Raise(L, newError(response.Request, response))
+		util.Raise(L, NewError(response.Request, response))
 		return 0
 	}
 	L.Push(L.Get(1))

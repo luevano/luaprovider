@@ -9,5 +9,8 @@ var (
 	ErrRateLimited = luahttp.ErrRateLimited
 )
 
-// HTTPError is a request that answered an error status, see the http lib.
+// HTTPError is a request that answered an error status other than 429, see the http lib.
 type HTTPError = luahttp.Error
+
+// RateLimitError is a request that answered 429.
+type RateLimitError = luahttp.RateLimitError

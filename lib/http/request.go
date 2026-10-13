@@ -116,7 +116,7 @@ func requestSend(L *lua.LState, client *http.Client, store gokv.Store) int {
 	}
 	response.Body = io.NopCloser(bytes.NewReader(body))
 	if response.StatusCode == http.StatusTooManyRequests {
-		util.Raise(L, newError(request, response))
+		util.Raise(L, NewError(request, response))
 		return 0
 	}
 
