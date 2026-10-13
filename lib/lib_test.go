@@ -205,3 +205,92 @@ assert(vm:run("t.a + t.b.c"):to_string() == "3", "plain table")
 		}
 	}
 }
+
+func TestHTMLCallbackErrors(t *testing.T) {
+	for _, method := range []string{"each", "map"} {
+		err := util.GoError(run(t, `
+local sdk = require("sdk")
+sdk.html.parse("<p>a</p>"):find("p"):`+method+`(function() sdk.encoding.json.decode("{") end)
+`))
+		var syntaxErr *json.SyntaxError
+		if !errors.As(err, &syntaxErr) || !strings.Contains(err.Error(), "html "+method+": json decode:") {
+			t.Errorf("%s: wanted the callback's json error, got %v", method, err)
+		}
+
+		err = util.GoError(run(t, `require("sdk").html.parse("<p>a</p>"):find("p"):`+method+`(function() error("boom") end)`))
+		if err == nil || !strings.Contains(err.Error(), "html "+method+":") || !strings.Contains(err.Error(), "boom") {
+			t.Errorf("%s: wanted the callback's error, got %v", method, err)
+		}
+	}
+}
+
+func TestJSONValues(t *testing.T) {
+	err := run(t, `
+local json = require("sdk").encoding.json
+local v = json.decode('{"list": [1, "two", true, {"k": 1.5}], "n": null, "s": "ñ"}')
+assert(v.list[1] == 1 and v.list[2] == "two" and v.list[3] == true, "list")
+assert(v.list[4].k == 1.5 and v.n == nil and v.s == "ñ", "nested")
+assert(json.encode({1, 2, "x"}) == '[1,2,"x"]', "array: " .. json.encode({1, 2, "x"}))
+assert(json.encode({a = {b = false}}) == '{"a":{"b":false}}', "object")
+assert(not pcall(json.encode, {f = print}), "functions aren't json")
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBase64(t *testing.T) {
+	err := run(t, `
+local b = require("sdk").encoding.base64
+assert(b.encode("hi?>") == "aGk/Pg==", "std")
+assert(b.encode("hi?>", b.raw_url_encoding) == "aGk_Pg", "raw url")
+assert(b.decode("aGk/Pg==") == "hi?>", "decode std")
+assert(b.decode("aGk_Pg", b.raw_url_encoding) == "hi?>", "decode raw url")
+assert(not pcall(b.decode, "@@@"), "invalid input")
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStrings(t *testing.T) {
+	err := run(t, `
+local s = require("sdk").strings
+assert(s.trim_space("  a b  ") == "a b", "trim_space")
+assert(s.replace_all("a-b-c", "-", "+") == "a+b+c", "replace_all")
+assert(s.replace("a-b-c", "-", "+", 1) == "a+b-c", "replace")
+local parts = s.split("a,b,c", ",")
+assert(#parts == 3 and parts[3] == "c", "split")
+assert(s.join({"a", "b"}, "/") == "a/b", "join")
+assert(s.has_prefix("chapter 1", "chapter") and s.has_suffix("x.png", ".png"), "prefix/suffix")
+assert(s.trim_prefix("/manga/1", "/manga/") == "1", "trim_prefix")
+assert(s.contains("abc", "b") and not s.contains("abc", "d"), "contains")
+assert(s.to_lower("AbC") == "abc" and s.to_upper("aBc") == "ABC", "case")
+assert(s.count("cheese", "e") == 3 and s.index("chicken", "ken") == 4, "count/index")
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestURLs(t *testing.T) {
+	err := run(t, `
+local urls = require("sdk").urls
+local u = urls.parse("https://example.com/a/b?x=1")
+assert(u:hostname() == "example.com", "hostname")
+assert(u:query():get("x") == "1", "query")
+assert(u:join_path("c", "d"):string() == "https://example.com/a/b/c/d?x=1", "join_path: " .. u:join_path("c", "d"):string())
+assert(u:parse("../z"):string() == "https://example.com/z", "relative: " .. u:parse("../z"):string())
+
+local v = urls.values()
+v:set("q", "a b")
+v:add("t", "1")
+assert(v:string() == "q=a+b&t=1", "values: " .. v:string())
+assert(urls.path_escape("a b/c") == "a%20b%2Fc" and urls.path_unescape("a%20b") == "a b", "path escape")
+assert(urls.query_escape("a b&") == "a+b%26" and urls.query_unescape("a+b%26") == "a b&", "query escape")
+assert(not pcall(urls.path_unescape, "%zz"), "bad escape")
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
