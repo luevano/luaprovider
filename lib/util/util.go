@@ -1,6 +1,7 @@
 package util
 
 import (
+	"math/rand/v2"
 	"slices"
 
 	luadoc "github.com/luevano/gopher-luadoc"
@@ -1190,7 +1191,8 @@ func last(L *lua.LState) int {
 func reverse(L *lua.LState) int {
 	list := checkList(L, 1)
 
-	reversed := util.ToLValueOrRaise(L, lo.Reverse(list))
+	slices.Reverse(list)
+	reversed := util.ToLValueOrRaise(L, list)
 	L.Push(reversed)
 	return 1
 }
@@ -1335,7 +1337,8 @@ func samples(L *lua.LState) int {
 func shuffle(L *lua.LState) int {
 	list := checkList(L, 1)
 
-	shuffled := util.ToLValueOrRaise(L, lo.Shuffle(list))
+	rand.Shuffle(len(list), func(i, j int) { list[i], list[j] = list[j], list[i] })
+	shuffled := util.ToLValueOrRaise(L, list)
 	L.Push(shuffled)
 	return 1
 }

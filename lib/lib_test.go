@@ -65,6 +65,7 @@ assert(mapped.a == 2 and mapped.b == 4, "map_async")
 assert(#util.filter(list, function(v) return v > 1 end) == 2, "filter")
 assert(util.reduce(list, function(acc, v) return acc + v end, 0) == 6, "reduce")
 assert(#util.shuffle(list) == 3 and #util.samples(list, 2) == 2, "samples")
+assert(table.concat(util.reverse(list), ",") == "2,1,3", "reverse")
 `
 	if err := run(t, script); err != nil {
 		t.Fatal(err)
