@@ -2,7 +2,7 @@ package luaprovider
 
 import luahttp "github.com/luevano/luaprovider/lib/http"
 
-// Errors to check with errors.Is, from what the scripts' requests answered (see the http
+// Errors to check with errors.Is (the same values as libmangal.ErrNotFound/ErrRateLimited), from what the scripts' requests answered (see the http
 // lib's response:check()).
 var (
 	ErrNotFound    = luahttp.ErrNotFound

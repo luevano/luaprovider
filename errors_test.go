@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/luevano/libmangal"
 )
 
 func TestHTTPErrors(t *testing.T) {
@@ -40,7 +42,7 @@ end
 
 	_, err := p.SearchMangas(context.Background(), "missing")
 	var httpErr *HTTPError
-	if !errors.Is(err, ErrNotFound) || !errors.As(err, &httpErr) || httpErr.StatusCode != http.StatusNotFound {
+	if !errors.Is(err, ErrNotFound) || !errors.Is(err, libmangal.ErrNotFound) || !errors.As(err, &httpErr) || httpErr.StatusCode != http.StatusNotFound {
 		t.Errorf("missing: %v, want a not found HTTPError", err)
 	}
 
@@ -51,7 +53,7 @@ end
 	}
 
 	_, err = p.SearchMangas(context.Background(), "limited")
-	if !errors.Is(err, ErrRateLimited) || !errors.As(err, &retrier) || retrier.RetryAfterDuration() != 3*time.Second {
+	if !errors.Is(err, ErrRateLimited) || !errors.Is(err, libmangal.ErrRateLimited) || !errors.As(err, &retrier) || retrier.RetryAfterDuration() != 3*time.Second {
 		t.Errorf("limited: %v, want rate limited for 3s", err)
 	}
 	var rateLimitErr *RateLimitError
