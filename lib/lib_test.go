@@ -96,3 +96,13 @@ assert(out == string.rep("b", 30000), "replaced")
 		t.Fatal(err)
 	}
 }
+
+func TestUnsetOptionsUseTheDefaults(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+	lib.Preload(L, &lib.Options{})
+	L.SetContext(context.Background())
+	if err := L.DoString(`require("sdk").log.status("hello")`); err != nil {
+		t.Fatal(err)
+	}
+}

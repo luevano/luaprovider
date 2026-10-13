@@ -54,7 +54,9 @@ func DefaultOptions() *Options {
 
 const libName = "sdk"
 
+// Lib is the sdk library, with the defaults for the options that aren't set.
 func Lib(L *lua.LState, options *Options) *luadoc.Lib {
+	options = withDefaults(options)
 	return &luadoc.Lib{
 		Name:        libName,
 		Description: `Contains various utilities for making HTTP requests, working with JSON, HTML, and more.`,
@@ -79,6 +81,30 @@ func Lib(L *lua.LState, options *Options) *luadoc.Lib {
 			optionsLib.Lib(options.Filter),
 		},
 	}
+}
+
+func withDefaults(options *Options) *Options {
+	defaults := DefaultOptions()
+	if options == nil {
+		return defaults
+	}
+	o := *options
+	if o.HTTPClient == nil {
+		o.HTTPClient = defaults.HTTPClient
+	}
+	if o.CacheStore == nil {
+		o.CacheStore = defaults.CacheStore
+	}
+	if o.Log == nil {
+		o.Log = defaults.Log
+	}
+	if o.Status == nil {
+		o.Status = defaults.Status
+	}
+	if o.Track == nil {
+		o.Track = defaults.Track
+	}
+	return &o
 }
 
 func Preload(L *lua.LState, options *Options) {
