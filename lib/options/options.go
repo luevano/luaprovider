@@ -2,23 +2,14 @@ package options
 
 import (
 	luadoc "github.com/luevano/gopher-luadoc"
+	"github.com/luevano/libmangal"
 	lua "github.com/yuin/gopher-lua"
 )
 
 const libName = "options"
 
 // Filter: The user's filters, same as mangoprovider's.
-type Filter struct {
-	// NSFW: Whether the results can include NSFW content.
-	NSFW bool
-	// Language: Of the mangas/chapters, e.g. "en".
-	Language string
-	// AvoidDuplicateChapters: Keep only one chapter per number.
-	AvoidDuplicateChapters bool
-	// ShowUnavailableChapters: Also show chapters that can't be downloaded,
-	// else luaprovider drops the ones with "unavailable" set.
-	ShowUnavailableChapters bool
-}
+type Filter = libmangal.FilterOptions
 
 // DefaultFilter is the filter used when none is given.
 func DefaultFilter() Filter {
