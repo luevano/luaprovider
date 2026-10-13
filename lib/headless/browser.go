@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -87,7 +88,9 @@ func newNewBrowser(track func(io.Closer), log func(string, ...any), status func(
 // launch starts a browser like rod does, with its download logged instead of printed on
 // stdout, which must stay clean (e.g. --json).
 func launch(ctx context.Context, log func(string, ...any), status func(context.Context, string)) (*launcher.Launcher, string, error) {
-	l := launcher.New().Context(ctx)
+	// leakless (kills chromium if mangal dies) only on linux: antiviruses flag its
+	// binary on windows, same as mangoprovider did
+	l := launcher.New().Leakless(runtime.GOOS == "linux").Context(ctx)
 	if l.Get(flags.Bin) == "" {
 		b := launcher.NewBrowser()
 		b.Context = ctx
