@@ -871,7 +871,7 @@ end
 function util.map(table, func)
 end
 
---- Same as map, the function can't run concurrently in lua
+--- Deprecated: an alias of map, kept for old scripts (lua can't run the function concurrently).
 --- @generic T
 --- @generic G
 --- @generic Q

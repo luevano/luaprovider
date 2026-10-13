@@ -555,7 +555,7 @@ func Lib() *luadoc.Lib {
 			},
 			{
 				Name:        "map_async",
-				Description: "Same as map, the function can't run concurrently in lua",
+				Description: "Deprecated: an alias of map, kept for old scripts (lua can't run the function concurrently).",
 				Value:       mapAsync,
 				Generics:    []string{T, G, Q},
 				Params: []*luadoc.Param{
