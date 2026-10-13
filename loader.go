@@ -154,6 +154,7 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 		resources: res,
 		state:     state,
 	}
+	p.closing, p.stopCalls = context.WithCancel(context.Background())
 	for name, fn := range map[string]**lua.LFunction{
 		methodSearchMangas:   &p.fnSearchMangas,
 		methodMangaVolumes:   &p.fnMangaVolumes,

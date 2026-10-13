@@ -30,9 +30,12 @@ type provider struct {
 	resources *resources
 
 	// a lua state isn't safe for concurrent use, calls take turns
-	mu    sync.Mutex
-	state *lua.LState
-	// closing a lua state twice panics
+	mu     sync.Mutex
+	state  *lua.LState
+	closed bool
+	// cancels the running call when closing, so Close doesn't wait for it
+	closing   context.Context
+	stopCalls context.CancelFunc
 	closeOnce sync.Once
 	closeErr  error
 
@@ -66,14 +69,17 @@ func (p mangaByIDProvider) MangaByID(ctx context.Context, id string) (mangadata.
 }
 
 func (p mangaByIDProvider) mangaByID(ctx context.Context, id string) (mangadata.Manga, bool, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	ctx, unlock, err := p.lock(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+	defer unlock()
 
 	top := p.state.GetTop()
 	defer p.state.SetTop(top)
 
 	p.state.SetContext(ctx)
-	err := p.state.CallByParam(lua.P{
+	err = p.state.CallByParam(lua.P{
 		Fn:      p.fnMangaByID,
 		NRet:    1,
 		Protect: true,
@@ -100,8 +106,32 @@ func (p *provider) String() string {
 	return p.info.Name
 }
 
+// ErrClosed is returned by the calls to a closed provider.
+var ErrClosed = errors.New("provider closed")
+
+// lock takes the lua state for a call, with a ctx that's also cancelled by Close. Call unlock
+// when done.
+func (p *provider) lock(ctx context.Context) (_ context.Context, unlock func(), _ error) {
+	p.mu.Lock()
+	if p.closed {
+		p.mu.Unlock()
+		return nil, nil, ErrClosed
+	}
+	ctx, cancel := context.WithCancel(ctx)
+	stop := context.AfterFunc(p.closing, cancel)
+	return ctx, func() {
+		stop()
+		cancel()
+		p.mu.Unlock()
+	}, nil
+}
+
 func (p *provider) Close() error {
 	p.closeOnce.Do(func() {
+		p.stopCalls()
+		p.mu.Lock()
+		defer p.mu.Unlock()
+		p.closed = true
 		p.closeErr = p.resources.close()
 		p.state.Close()
 	})
@@ -128,15 +158,18 @@ func loadItems[Input intoLValue, Output any](
 	convert func(int, *lua.LTable) (Output, error),
 	args ...Input,
 ) ([]Output, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	ctx, unlock, err := p.lock(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer unlock()
 
 	// the returned value has to be popped, else the stack grows until the state breaks
 	top := p.state.GetTop()
 	defer p.state.SetTop(top)
 
 	p.state.SetContext(ctx)
-	err := p.state.CallByParam(lua.P{
+	err = p.state.CallByParam(lua.P{
 		Fn:      lfunc,
 		NRet:    1,
 		Protect: true,
