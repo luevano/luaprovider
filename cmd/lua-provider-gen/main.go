@@ -11,7 +11,7 @@ import (
 
 const (
 	filenameSDK       = "sdk.lua"
-	filenameProvider  = "provider.lua"
+	filenameProvider  = "main.lua"
 	filenameLuarcJSON = ".luarc.json"
 )
 
@@ -19,7 +19,7 @@ func main() {
 	dir := flag.String("dir", ".", "output directory")
 
 	generateSDK := flag.Bool("sdk", false, "generate sdk.lua file for language server")
-	generateProvider := flag.Bool("provider", false, "generate provider.lua template")
+	generateProvider := flag.Bool("provider", false, "generate main.lua provider template (the file mangal loads)")
 	generateLuarc := flag.Bool("luarc", false, "generate .luarc.json file for language server configuration")
 
 	flag.Parse()

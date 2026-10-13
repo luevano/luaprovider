@@ -160,7 +160,7 @@ lua-provider-gen -sdk -provider -luarc
 This command will create the following files:
 
 - `sdk.lua` - gives IDE autocompletion
-- `provider.lua` - a provider script template
+- `main.lua` - a provider script template (mangal loads `main.lua` next to a `mangal.toml`)
 - `.luarc.json` - a language server configuration
 
 ## Credits

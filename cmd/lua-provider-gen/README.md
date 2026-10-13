@@ -17,7 +17,7 @@ Usage of lua-provider-gen:
   -luarc
     	generate .luarc.json file for language server configuration
   -provider
-    	generate provider.lua template
+    	generate main.lua provider template (the file mangal loads)
   -sdk
     	generate sdk.lua file for language server
 ```
