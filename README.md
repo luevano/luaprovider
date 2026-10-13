@@ -14,6 +14,12 @@ It uses [native go implementation of the Lua interpreter](https://github.com/yui
 
 **Note**: This is a fork of [mangalorg/luaprovider](https://github.com/mangalorg/luaprovider).
 
+> **Warning**
+>
+> Provider scripts are code: they run with your network access (http, headless browsers) and the
+> SDK libraries. Scripts get no `io`/`os` and `require` only loads files from the provider's own
+> package paths, but only install providers you trust.
+
 ## Features
 
 - Built-in Lua VM without CGO with
