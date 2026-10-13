@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/progress"
 	"github.com/philippgille/gokv"
@@ -44,6 +45,15 @@ function ChapterPages(chapter)
 	return {{url = "https://site/1.png", extension = ".png"}}
 end
 `
+
+// logged sets a libmangal logger on p and returns what it logged, starting with the backlog.
+func logged(p *provider) []string {
+	var msgs []string
+	l := logger.NewLogger()
+	l.SetOnLog(func(format string, a ...any) { msgs = append(msgs, fmt.Sprintf(format, a...)) })
+	p.SetLogger(l)
+	return msgs
+}
 
 func loadTestProvider(t *testing.T, script string) *provider {
 	t.Helper()
@@ -206,8 +216,8 @@ function MangaVolumes() return {} end
 function VolumeChapters() return {} end
 function ChapterPages() return {} end
 `)
-	if len(p.log.backlog) != 1 || p.log.backlog[0] != "test: loaded" {
-		t.Errorf("wanted the script's message in the backlog, got %q", p.log.backlog)
+	if got := logged(p); len(got) != 1 || got[0] != "[backlog] test: loaded" {
+		t.Errorf("wanted the script's message in the backlog, got %q", got)
 	}
 }
 

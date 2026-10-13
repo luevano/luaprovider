@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	lm "github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/libmangal/netutil"
 	"github.com/luevano/luaprovider/lib/options"
 	"github.com/philippgille/gokv"
@@ -108,7 +109,7 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 	if options.CacheStore == nil {
 		options.CacheStore = defaults.CacheStore
 	}
-	log := newProviderLogger(l.info)
+	log := logger.NewProviderLogger(l.info.ID, l.info.Name)
 	res := &resources{}
 
 	// opened once, closed with the provider

@@ -55,7 +55,7 @@ func TestSandbox(t *testing.T) {
 	if err := p.state.DoString(`print("hello", 1, nil)`); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(p.log.backlog, "test: hello\t1\tnil") {
-		t.Errorf("print should go to the provider log, got %q", p.log.backlog)
+	if got := logged(p); !slices.Contains(got, "[backlog] test: hello\t1\tnil") {
+		t.Errorf("print should go to the provider log, got %q", got)
 	}
 }

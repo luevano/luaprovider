@@ -1,6 +1,7 @@
 package luaprovider
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/luaprovider/lib"
 	"github.com/luevano/luaprovider/util"
 	"github.com/philippgille/gokv"
@@ -16,7 +18,7 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-func newState(options Options, store gokv.Store, log *providerLogger, resources *resources) *lua.LState {
+func newState(options Options, store gokv.Store, log *logger.ProviderLogger, resources *resources) *lua.LState {
 	libs := []lua.LGFunction{
 		lua.OpenBase,
 		lua.OpenTable,
@@ -39,8 +41,8 @@ func newState(options Options, store gokv.Store, log *providerLogger, resources 
 		HTTPClient: options.HTTPClient,
 		CacheStore: store,
 		UserAgent:  options.UserAgent,
-		Log:        log.log,
-		Status:     log.status,
+		Log:        log.Log,
+		Status:     func(ctx context.Context, message string) { log.Status(ctx, "%s", message) },
 		Track:      resources.track,
 		Filter:     options.Filter,
 	})
@@ -59,7 +61,7 @@ func newState(options Options, store gokv.Store, log *providerLogger, resources 
 
 // sandbox keeps scripts away from the file system and stdout: no io/os, nothing that loads
 // files but require (confined to the package paths), print goes to the provider log.
-func sandbox(state *lua.LState, packagePaths []string, log *providerLogger) {
+func sandbox(state *lua.LState, packagePaths []string, log *logger.ProviderLogger) {
 	for _, name := range []string{"dofile", "loadfile", "load", "loadstring", "_printregs"} {
 		state.SetGlobal(name, lua.LNil)
 	}
@@ -69,7 +71,7 @@ func sandbox(state *lua.LState, packagePaths []string, log *providerLogger) {
 		for i := range parts {
 			parts[i] = L.ToStringMeta(L.Get(i + 1)).String()
 		}
-		log.log("%s", strings.Join(parts, "\t"))
+		log.Log("%s", strings.Join(parts, "\t"))
 		return 0
 	}))
 

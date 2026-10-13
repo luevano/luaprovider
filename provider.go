@@ -25,7 +25,7 @@ var _ libmangal.Provider = (*provider)(nil)
 type provider struct {
 	info      libmangal.ProviderInfo
 	options   Options
-	log       *providerLogger
+	log       *logger.ProviderLogger
 	resources *resources
 
 	// a lua state isn't safe for concurrent use, calls take turns
@@ -56,7 +56,7 @@ type mangaByIDProvider struct {
 // MangaByID calls the script's MangaByID(id), which returns the manga or nil if there's none.
 // A not found http error (response:check()) is no manga too.
 func (p mangaByIDProvider) MangaByID(ctx context.Context, id string) (mangadata.Manga, bool, error) {
-	p.log.log("getting manga with id %q", id)
+	p.log.Log("getting manga with id %q", id)
 	manga, found, err := p.mangaByID(ctx, id)
 	if errors.Is(err, ErrNotFound) {
 		return nil, false, nil
@@ -151,7 +151,7 @@ func (p *provider) Info() libmangal.ProviderInfo {
 }
 
 func (p *provider) SetLogger(logger *logger.Logger) {
-	p.log.setLogger(logger)
+	p.log.SetLogger(logger)
 }
 
 type intoLValue interface {
@@ -226,7 +226,7 @@ func (p *provider) SearchMangas(
 	ctx context.Context,
 	query string,
 ) ([]mangadata.Manga, error) {
-	p.log.log("searching mangas with query %q", query)
+	p.log.Log("searching mangas with query %q", query)
 
 	mangas, err := loadItems(
 		ctx,
@@ -271,7 +271,7 @@ func (p *provider) MangaVolumes(
 		return nil, fmt.Errorf("expected a luaprovider manga, got %T", manga)
 	}
 
-	p.log.log("fetching volumes for manga %q", m)
+	p.log.Log("fetching volumes for manga %q", m)
 	volumes, err := loadItems(
 		ctx,
 		p,
@@ -305,7 +305,7 @@ func (p *provider) VolumeChapters(
 		return nil, fmt.Errorf("expected a luaprovider volume, got %T", volume)
 	}
 
-	p.log.log("fetching chapters for volume %s", v)
+	p.log.Log("fetching chapters for volume %s", v)
 	var last float32
 	chapters, err := loadItems(
 		ctx,
@@ -354,7 +354,7 @@ func (p *provider) ChapterPages(
 		return nil, fmt.Errorf("expected a luaprovider chapter, got %T", chapter)
 	}
 
-	p.log.log("fetching pages for chapter %q", c)
+	p.log.Log("fetching pages for chapter %q", c)
 	pages, err := loadItems(
 		ctx,
 		p,
@@ -404,7 +404,7 @@ func (p *provider) parseDate(date string) metadata.Date {
 	if date != "" {
 		var err error
 		if parsed, err = time.Parse(time.DateOnly, date); err != nil {
-			p.log.log("invalid chapter date %q, using today: %s", date, err)
+			p.log.Log("invalid chapter date %q, using today: %s", date, err)
 			parsed = time.Now()
 		}
 	}
@@ -463,7 +463,7 @@ func (p *provider) getPageImage(
 			wait *= 2
 		}
 		after = min(after, maxRetryWait)
-		p.log.status(ctx, fmt.Sprintf("page of chapter %q: 429 too many requests, retry %d/%d in %s", page.chapter, retry+1, pageRetries, after.Round(time.Second)))
+		p.log.Status(ctx, "page of chapter %q: 429 too many requests, retry %d/%d in %s", page.chapter, retry+1, pageRetries, after.Round(time.Second))
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
