@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/luevano/luaprovider/lib"
+	"github.com/luevano/luaprovider/util"
 	"github.com/philippgille/gokv"
 	"github.com/samber/lo"
 	lua "github.com/yuin/gopher-lua"
@@ -99,7 +100,7 @@ func fileLoader(dirs []string) lua.LGFunction {
 			}
 			fn, err := L.LoadFile(path)
 			if err != nil {
-				L.RaiseError("%s", err.Error())
+				util.Raise(L, err)
 			}
 			L.Push(fn)
 			return 1

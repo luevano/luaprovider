@@ -51,7 +51,7 @@ func selectionHtml(L *lua.LState) int {
 	selection := util.Check[*goquery.Selection](L, 1)
 	html, err := selection.Html()
 	if err != nil {
-		L.RaiseError("html selection: %s", err)
+		util.Raise(L, fmt.Errorf("html selection: %w", err))
 		return 0
 	}
 
@@ -317,13 +317,13 @@ func selectionSimplified(L *lua.LState) int {
 
 	html, err := selection.Html()
 	if err != nil {
-		L.RaiseError("html selection: %s", err)
+		util.Raise(L, fmt.Errorf("html selection: %w", err))
 		return 0
 	}
 
 	article, err := readability.New().Parse(strings.NewReader(html), "https://example.com")
 	if err != nil {
-		L.RaiseError("html simplify: %s", err)
+		util.Raise(L, fmt.Errorf("html simplify: %w", err))
 		return 0
 	}
 

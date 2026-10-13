@@ -66,7 +66,7 @@ func newNewBrowser(track func(io.Closer), log func(string, ...any), status func(
 	return func(state *lua.LState) int {
 		l, u, err := launch(state.Context(), log, status)
 		if err != nil {
-			state.RaiseError("headless browser: %s", err)
+			util.Raise(state, fmt.Errorf("headless browser: %w", err))
 			return 0
 		}
 		// the browser outlives the call, its connection doesn't take the call's ctx
@@ -74,7 +74,7 @@ func newNewBrowser(track func(io.Closer), log func(string, ...any), status func(
 		if err := b.Connect(); err != nil {
 			l.Kill()
 			cleanup(l)
-			state.RaiseError("headless browser: %s", err)
+			util.Raise(state, fmt.Errorf("headless browser: %w", err))
 			return 0
 		}
 		track(b)
@@ -126,12 +126,12 @@ func browserPage(state *lua.LState) int {
 	// the browser can outlive a call, each operation uses the context of the current one
 	page, err := browser.Context(state.Context()).Page(proto.TargetCreateTarget{URL: URL})
 	if err != nil {
-		state.RaiseError("headless page %s: %s", URL, err)
+		util.Raise(state, fmt.Errorf("headless page %s: %w", URL, err))
 		return 0
 	}
 	if err := page.WaitLoad(); err != nil {
 		page.Close()
-		state.RaiseError("headless page %s: %s", URL, err)
+		util.Raise(state, fmt.Errorf("headless page %s: %w", URL, err))
 		return 0
 	}
 
@@ -142,7 +142,7 @@ func browserPage(state *lua.LState) int {
 func browserClose(state *lua.LState) int {
 	browser := util.Check[*browser](state, 1)
 	if err := browser.Close(); err != nil {
-		state.RaiseError("headless browser close: %s", err)
+		util.Raise(state, fmt.Errorf("headless browser close: %w", err))
 	}
 	return 0
 }

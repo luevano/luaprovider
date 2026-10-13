@@ -1,6 +1,7 @@
 package regexp
 
 import (
+	"fmt"
 	"regexp"
 
 	luadoc "github.com/luevano/gopher-luadoc"
@@ -240,7 +241,7 @@ func match(L *lua.LState) int {
 	text := L.CheckString(2)
 	matched, err := regexp.MatchString(pattern, text)
 	if err != nil {
-		L.RaiseError("regexp match: %s", err)
+		util.Raise(L, fmt.Errorf("regexp match: %w", err))
 		return 0
 	}
 
@@ -252,7 +253,7 @@ func compile(L *lua.LState) int {
 	pattern := L.CheckString(1)
 	compiled, err := regexp.Compile(pattern)
 	if err != nil {
-		L.RaiseError("regexp compile: %s", err)
+		util.Raise(L, fmt.Errorf("regexp compile: %w", err))
 		return 0
 	}
 

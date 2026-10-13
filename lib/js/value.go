@@ -1,6 +1,8 @@
 package js
 
 import (
+	"fmt"
+
 	"github.com/luevano/luaprovider/util"
 	"github.com/robertkrimen/otto"
 	lua "github.com/yuin/gopher-lua"
@@ -12,13 +14,13 @@ func vmValueExport(L *lua.LState) int {
 	value := util.Check[*otto.Value](L, 1)
 	nativeValue, err := value.Export()
 	if err != nil {
-		L.RaiseError("js export: %s", err)
+		util.Raise(L, fmt.Errorf("js export: %w", err))
 		return 0
 	}
 
 	lvalue, err := util.ToLValue(L, nativeValue)
 	if err != nil {
-		L.RaiseError("js export: %s", err)
+		util.Raise(L, fmt.Errorf("js export: %w", err))
 		return 0
 	}
 

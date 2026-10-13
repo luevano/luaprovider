@@ -3,10 +3,12 @@ package json
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"maps"
 	"slices"
 
 	luadoc "github.com/luevano/gopher-luadoc"
+	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -64,7 +66,7 @@ func apiDecode(L *lua.LState) int {
 
 	value, err := decode(L, []byte(str))
 	if err != nil {
-		L.RaiseError("json decode: %s", err)
+		util.Raise(L, fmt.Errorf("json decode: %w", err))
 		return 0
 	}
 	L.Push(value)
@@ -76,7 +78,7 @@ func apiEncode(L *lua.LState) int {
 
 	data, err := encode(value)
 	if err != nil {
-		L.RaiseError("json encode: %s", err)
+		util.Raise(L, fmt.Errorf("json encode: %w", err))
 		return 0
 	}
 	L.Push(lua.LString(string(data)))

@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -38,7 +39,7 @@ func responseBody(L *lua.LState) int {
 
 	buffer, err = io.ReadAll(response.Body)
 	if err != nil {
-		L.RaiseError("http response body: %s", err)
+		util.Raise(L, fmt.Errorf("http response body: %w", err))
 		return 0
 	}
 	// so it can be read again

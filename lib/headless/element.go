@@ -1,6 +1,8 @@
 package headless
 
 import (
+	"fmt"
+
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/proto"
 	"github.com/luevano/luaprovider/util"
@@ -14,7 +16,7 @@ func elementInput(state *lua.LState) int {
 	text := state.CheckString(2)
 
 	if err := element.Context(state.Context()).Input(text); err != nil {
-		state.RaiseError("headless element input: %s", err)
+		util.Raise(state, fmt.Errorf("headless element input: %w", err))
 	}
 
 	return 0
@@ -25,7 +27,7 @@ func elementClick(state *lua.LState) int {
 	count := state.OptNumber(2, 1)
 
 	if err := element.Context(state.Context()).Click(proto.InputMouseButtonLeft, int(count)); err != nil {
-		state.RaiseError("headless element click: %s", err)
+		util.Raise(state, fmt.Errorf("headless element click: %w", err))
 	}
 
 	return 0
@@ -36,7 +38,7 @@ func elementHTML(state *lua.LState) int {
 
 	HTML, err := element.Context(state.Context()).HTML()
 	if err != nil {
-		state.RaiseError("headless element html: %s", err)
+		util.Raise(state, fmt.Errorf("headless element html: %w", err))
 		return 0
 	}
 

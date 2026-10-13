@@ -32,7 +32,7 @@ func newRequestNew(userAgent string) lua.LGFunction {
 			strings.NewReader(body),
 		)
 		if err != nil {
-			L.RaiseError("http request %s %s: %s", method, url, err)
+			util.Raise(L, fmt.Errorf("http request %s %s: %w", method, url, err))
 		}
 		if userAgent != "" {
 			request.Header.Set("User-Agent", userAgent)
@@ -111,7 +111,7 @@ func requestSend(L *lua.LState, client *http.Client, store gokv.Store) int {
 	body, err := io.ReadAll(response.Body)
 	response.Body.Close()
 	if err != nil {
-		L.RaiseError("http send %s %s: read body: %s", request.Method, request.URL, err)
+		util.Raise(L, fmt.Errorf("http send %s %s: read body: %w", request.Method, request.URL, err))
 		return 0
 	}
 	response.Body = io.NopCloser(bytes.NewReader(body))

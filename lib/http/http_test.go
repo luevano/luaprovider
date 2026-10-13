@@ -2,13 +2,16 @@ package http_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
 
 	"github.com/luevano/luaprovider/lib"
+	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -51,5 +54,23 @@ get("POST")
 	}
 	if got := userAgent.Load(); got != "test-agent" {
 		t.Errorf("wanted the default user agent, got %v", got)
+	}
+}
+
+func TestBodyReadErrorKeepsItsChain(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Length", "100")
+		fmt.Fprint(w, "short")
+	}))
+	defer server.Close()
+
+	L := lua.NewState()
+	defer L.Close()
+	lib.Preload(L, lib.DefaultOptions())
+	L.SetContext(context.Background())
+
+	err := L.DoString(fmt.Sprintf(`require("sdk").http.request("GET", %q):send()`, server.URL))
+	if err := util.GoError(err); !errors.Is(err, io.ErrUnexpectedEOF) {
+		t.Fatalf("wanted io.ErrUnexpectedEOF in the chain, got %v", err)
 	}
 }

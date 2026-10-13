@@ -2,8 +2,10 @@ package base64
 
 import (
 	"encoding/base64"
+	"fmt"
 
 	luadoc "github.com/luevano/gopher-luadoc"
+	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -115,7 +117,7 @@ func decode(L *lua.LState) int {
 	encoding := checkEncoding(L, 2)
 	decoded, err := encoding.DecodeString(value)
 	if err != nil {
-		L.RaiseError("base64 decode: %s", err)
+		util.Raise(L, fmt.Errorf("base64 decode: %w", err))
 		return 0
 	}
 	L.Push(lua.LString(decoded))

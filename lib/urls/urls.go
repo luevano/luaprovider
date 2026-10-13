@@ -1,6 +1,7 @@
 package urls
 
 import (
+	"fmt"
 	"net/url"
 
 	luadoc "github.com/luevano/gopher-luadoc"
@@ -368,7 +369,7 @@ func urlPathUnescape(L *lua.LState) int {
 	s := L.CheckString(1)
 	s, err := url.PathUnescape(s)
 	if err != nil {
-		L.RaiseError("urls path unescape: %s", err)
+		util.Raise(L, fmt.Errorf("urls path unescape: %w", err))
 		return 0
 	}
 	L.Push(lua.LString(s))
@@ -385,7 +386,7 @@ func urlQueryUnescape(L *lua.LState) int {
 	s := L.CheckString(1)
 	s, err := url.QueryUnescape(s)
 	if err != nil {
-		L.RaiseError("urls query unescape: %s", err)
+		util.Raise(L, fmt.Errorf("urls query unescape: %w", err))
 		return 0
 	}
 	L.Push(lua.LString(s))
@@ -430,7 +431,7 @@ func urlValuesParse(L *lua.LState) int {
 	s := L.CheckString(1)
 	v, err := url.ParseQuery(s)
 	if err != nil {
-		L.RaiseError("urls parse query: %s", err)
+		util.Raise(L, fmt.Errorf("urls parse query: %w", err))
 		return 0
 	}
 	util.Push(L, &v, valuesTypeName)
@@ -456,7 +457,7 @@ func urlParse(L *lua.LState) int {
 
 	u, err := url.Parse(rawURL)
 	if err != nil {
-		L.RaiseError("urls parse: %s", err)
+		util.Raise(L, fmt.Errorf("urls parse: %w", err))
 		return 0
 	}
 
@@ -505,7 +506,7 @@ func urlURLParse(L *lua.LState) int {
 
 	parsed, err := u.Parse(ref)
 	if err != nil {
-		L.RaiseError("urls parse: %s", err)
+		util.Raise(L, fmt.Errorf("urls parse: %w", err))
 		return 0
 	}
 

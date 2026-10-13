@@ -61,7 +61,7 @@ func FromLValue(value lua.LValue) (any, error) {
 func ToLValueOrRaise(L *lua.LState, value any) lua.LValue {
 	lvalue, err := ToLValue(L, value)
 	if err != nil {
-		L.RaiseError("convert %T to a lua value: %s", value, err)
+		Raise(L, fmt.Errorf("convert %T to a lua value: %w", value, err))
 	}
 	return lvalue
 }

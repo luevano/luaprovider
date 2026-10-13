@@ -3,6 +3,7 @@ package js
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/luevano/luaprovider/util"
 	"github.com/robertkrimen/otto"
@@ -24,7 +25,7 @@ func vmRun(L *lua.LState) int {
 
 	value, err := runInterruptible(L.Context(), vm, script)
 	if err != nil {
-		L.RaiseError("js run: %s", err)
+		util.Raise(L, fmt.Errorf("js run: %w", err))
 		return 0
 	}
 
@@ -67,7 +68,7 @@ func vmGet(L *lua.LState) int {
 
 	value, err := vm.Get(name)
 	if err != nil {
-		L.RaiseError("js get %q: %s", name, err)
+		util.Raise(L, fmt.Errorf("js get %q: %w", name, err))
 		return 0
 	}
 
@@ -82,13 +83,13 @@ func vmSet(L *lua.LState) int {
 
 	value, err := util.FromLValue(lvalue)
 	if err != nil {
-		L.RaiseError("js set %q: %s", name, err)
+		util.Raise(L, fmt.Errorf("js set %q: %w", name, err))
 		return 0
 	}
 
 	err = vm.Set(name, value)
 	if err != nil {
-		L.RaiseError("js set %q: %s", name, err)
+		util.Raise(L, fmt.Errorf("js set %q: %w", name, err))
 		return 0
 	}
 

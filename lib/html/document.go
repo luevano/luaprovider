@@ -1,6 +1,7 @@
 package html
 
 import (
+	"fmt"
 	"strings"
 
 	md "github.com/JohannesKaufmann/html-to-markdown"
@@ -17,7 +18,7 @@ func parse(L *lua.LState) int {
 	reader := strings.NewReader(value)
 	document, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
-		L.RaiseError("html parse: %s", err)
+		util.Raise(L, fmt.Errorf("html parse: %w", err))
 		return 0
 	}
 
@@ -38,7 +39,7 @@ func documentHtml(L *lua.LState) int {
 	document := util.Check[*goquery.Document](L, 1)
 	html, err := document.Html()
 	if err != nil {
-		L.RaiseError("html document: %s", err)
+		util.Raise(L, fmt.Errorf("html document: %w", err))
 		return 0
 	}
 
@@ -65,13 +66,13 @@ func documentSimplified(L *lua.LState) int {
 	document := util.Check[*goquery.Document](L, 1)
 	html, err := document.Html()
 	if err != nil {
-		L.RaiseError("html document: %s", err)
+		util.Raise(L, fmt.Errorf("html document: %w", err))
 		return 0
 	}
 
 	article, err := readability.New().Parse(strings.NewReader(html), "https://example.com")
 	if err != nil {
-		L.RaiseError("html simplify: %s", err)
+		util.Raise(L, fmt.Errorf("html simplify: %w", err))
 		return 0
 	}
 

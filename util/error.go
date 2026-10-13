@@ -6,14 +6,19 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-// Raise raises err as a lua error that keeps it: scripts see its message (tostring), and
-// GoError gets it back from what the call returns.
+// Raise raises err as a lua error that keeps it: scripts see its message (tostring, ..),
+// and GoError gets it back from what the call returns.
 func Raise(L *lua.LState, err error) {
 	ud := L.NewUserData()
 	ud.Value = err
 	mt := L.NewTable()
 	mt.RawSetString("__tostring", L.NewFunction(func(L *lua.LState) int {
 		L.Push(lua.LString(err.Error()))
+		return 1
+	}))
+	// scripts used to get a string, so "msg: " .. err keeps working
+	mt.RawSetString("__concat", L.NewFunction(func(L *lua.LState) int {
+		L.Push(lua.LString(L.ToStringMeta(L.Get(1)).String() + L.ToStringMeta(L.Get(2)).String()))
 		return 1
 	}))
 	L.SetMetatable(ud, mt)

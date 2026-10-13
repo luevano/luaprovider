@@ -2,8 +2,10 @@ package aes
 
 import (
 	"crypto/aes"
+	"fmt"
 
 	luadoc "github.com/luevano/gopher-luadoc"
+	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -70,7 +72,7 @@ func encrypt(L *lua.LState) int {
 
 	cipher, err := aes.NewCipher([]byte(key))
 	if err != nil {
-		L.RaiseError("aes encrypt: %s", err)
+		util.Raise(L, fmt.Errorf("aes encrypt: %w", err))
 		return 0
 	}
 
@@ -87,7 +89,7 @@ func decrypt(L *lua.LState) int {
 
 	cipher, err := aes.NewCipher([]byte(key))
 	if err != nil {
-		L.RaiseError("aes decrypt: %s", err)
+		util.Raise(L, fmt.Errorf("aes decrypt: %w", err))
 		return 0
 	}
 

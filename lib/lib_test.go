@@ -2,10 +2,14 @@ package lib_test
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/luevano/luaprovider/lib"
+	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -39,7 +43,7 @@ assert(sdk.regexp.urls_strict:match("see https://example.com"), "vars")
 }
 
 func TestLibErrorsSayWhatFailed(t *testing.T) {
-	err := run(t, `require("sdk").regexp.compile("(")`)
+	err := util.GoError(run(t, `require("sdk").regexp.compile("(")`))
 	if err == nil || !strings.Contains(err.Error(), "regexp compile:") {
 		t.Fatalf("wanted a regexp compile error, got %v", err)
 	}
@@ -151,6 +155,30 @@ for _ = 1, 20 do
 end
 `
 	if err := run(t, script); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestLibErrorsKeepTheirChain(t *testing.T) {
+	var syntaxErr *json.SyntaxError
+	err := util.GoError(run(t, `require("sdk").encoding.json.decode("{")`))
+	if !errors.As(err, &syntaxErr) {
+		t.Errorf("json decode: wanted a *json.SyntaxError in the chain, got %v", err)
+	}
+
+	var urlErr *url.Error
+	err = util.GoError(run(t, `require("sdk").urls.parse(":bad")`))
+	if !errors.As(err, &urlErr) {
+		t.Errorf("urls parse: wanted a *url.Error in the chain, got %v", err)
+	}
+
+	// scripts can still use the message
+	if err := run(t, `
+local ok, err = pcall(require("sdk").encoding.json.decode, "{")
+assert(not ok)
+assert(tostring(err):find("json decode:"), "tostring")
+assert(("x: " .. err):find("json decode:"), "concat")
+`); err != nil {
 		t.Fatal(err)
 	}
 }

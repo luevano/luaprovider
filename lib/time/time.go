@@ -1,6 +1,7 @@
 package time
 
 import (
+	"fmt"
 	"time"
 
 	luadoc "github.com/luevano/gopher-luadoc"
@@ -541,7 +542,7 @@ func timeParse(L *lua.LState) int {
 	value := L.CheckString(2)
 	t, err := time.Parse(layout, value)
 	if err != nil {
-		L.RaiseError("time parse %q: %s", value, err)
+		util.Raise(L, fmt.Errorf("time parse %q: %w", value, err))
 		return 0
 	}
 	util.Push(L, t, timeTypeName)

@@ -1,6 +1,8 @@
 package headless
 
 import (
+	"fmt"
+
 	"github.com/go-rod/rod"
 	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
@@ -14,7 +16,7 @@ func pageElement(state *lua.LState) int {
 
 	found, element, err := page.Context(state.Context()).Has(selector)
 	if err != nil {
-		state.RaiseError("headless element %q: %s", selector, err)
+		util.Raise(state, fmt.Errorf("headless element %q: %w", selector, err))
 		return 0
 	}
 	if !found {
@@ -29,7 +31,7 @@ func pageNavigate(state *lua.LState) int {
 	URL := state.CheckString(2)
 
 	if err := page.Context(state.Context()).Navigate(URL); err != nil {
-		state.RaiseError("headless navigate %s: %s", URL, err)
+		util.Raise(state, fmt.Errorf("headless navigate %s: %w", URL, err))
 	}
 	return 0
 }
@@ -39,7 +41,7 @@ func pageHTML(state *lua.LState) int {
 
 	HTML, err := page.Context(state.Context()).HTML()
 	if err != nil {
-		state.RaiseError("headless page html: %s", err)
+		util.Raise(state, fmt.Errorf("headless page html: %w", err))
 		return 0
 	}
 	state.Push(lua.LString(HTML))
@@ -49,7 +51,7 @@ func pageHTML(state *lua.LState) int {
 func pageClose(state *lua.LState) int {
 	page := util.Check[*rod.Page](state, 1)
 	if err := page.Close(); err != nil {
-		state.RaiseError("headless page close: %s", err)
+		util.Raise(state, fmt.Errorf("headless page close: %w", err))
 	}
 	return 0
 }
