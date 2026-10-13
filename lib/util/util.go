@@ -986,6 +986,9 @@ func checkList(L *lua.LState, n int) (list []lua.LValue) {
 func chunk(L *lua.LState) int {
 	list := checkList(L, 1)
 	size := L.OptInt(2, 1)
+	if size <= 0 {
+		L.ArgError(2, "size must be greater than 0")
+	}
 
 	chunks := util.ToLValueOrRaise(L, lo.Chunk(list, size))
 	L.Push(chunks)
@@ -994,7 +997,7 @@ func chunk(L *lua.LState) int {
 
 func drop(L *lua.LState) int {
 	list := checkList(L, 1)
-	n := L.CheckInt(2)
+	n := checkCount(L, 2)
 
 	dropped := util.ToLValueOrRaise(L, lo.Drop(list, n))
 	L.Push(dropped)
@@ -1003,7 +1006,7 @@ func drop(L *lua.LState) int {
 
 func dropRight(L *lua.LState) int {
 	list := checkList(L, 1)
-	n := L.CheckInt(2)
+	n := checkCount(L, 2)
 
 	dropped := util.ToLValueOrRaise(L, lo.DropRight(list, n))
 	L.Push(dropped)
@@ -1132,16 +1135,20 @@ func initial(L *lua.LState) int {
 	return 1
 }
 
+// checkCount is the n-th argument, a count of elements: not negative.
+func checkCount(L *lua.LState, n int) int {
+	count := L.CheckInt(n)
+	if count < 0 {
+		L.ArgError(n, "must not be negative")
+	}
+	return count
+}
+
 func take(L *lua.LState) int {
 	list := checkList(L, 1)
-	n := L.CheckInt(2)
+	n := checkCount(L, 2)
 
-	var taken []lua.LValue
-	if len(list) == 0 {
-		taken = nil
-	} else {
-		taken = list[:n]
-	}
+	taken := list[:min(n, len(list))]
 
 	t := util.ToLValueOrRaise(L, taken)
 	L.Push(t)

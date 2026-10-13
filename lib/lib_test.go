@@ -106,3 +106,27 @@ func TestUnsetOptionsUseTheDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestUtilBadArgumentsAreErrors(t *testing.T) {
+	for _, code := range []string{
+		`sdk.util.take({1, 2}, -1)`,
+		`sdk.util.drop({1, 2}, -1)`,
+		`sdk.util.drop_right({1, 2}, -1)`,
+		`sdk.util.chunk({1, 2}, 0)`,
+		`sdk.encoding.base64.encode("x", sdk.regexp.compile("a"))`,
+	} {
+		err := run(t, `local sdk = require("sdk"); `+code)
+		if err == nil || !strings.Contains(err.Error(), "bad argument") {
+			t.Errorf("%s: %v, want an argument error", code, err)
+		}
+	}
+
+	script := `
+local sdk = require("sdk")
+assert(#sdk.util.take({1, 2}, 5) == 2, "take more than there is")
+assert(#sdk.util.take({}, 1) == 0, "take from empty")
+`
+	if err := run(t, script); err != nil {
+		t.Fatal(err)
+	}
+}

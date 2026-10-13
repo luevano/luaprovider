@@ -105,14 +105,14 @@ func Lib(L *lua.LState) *luadoc.Lib {
 
 func encode(L *lua.LState) int {
 	value := L.CheckString(1)
-	encoding := L.OptUserData(2, encodingToLua(L, base64.StdEncoding)).Value.(*base64.Encoding)
+	encoding := checkEncoding(L, 2)
 	L.Push(lua.LString(encoding.EncodeToString([]byte(value))))
 	return 1
 }
 
 func decode(L *lua.LState) int {
 	value := L.CheckString(1)
-	encoding := L.OptUserData(2, encodingToLua(L, base64.StdEncoding)).Value.(*base64.Encoding)
+	encoding := checkEncoding(L, 2)
 	decoded, err := encoding.DecodeString(value)
 	if err != nil {
 		L.RaiseError("base64 decode: %s", err)
@@ -120,4 +120,12 @@ func decode(L *lua.LState) int {
 	}
 	L.Push(lua.LString(decoded))
 	return 1
+}
+
+func checkEncoding(L *lua.LState, n int) *base64.Encoding {
+	encoding, ok := L.OptUserData(n, encodingToLua(L, base64.StdEncoding)).Value.(*base64.Encoding)
+	if !ok {
+		L.ArgError(n, "base64 encoding expected")
+	}
+	return encoding
 }
