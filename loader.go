@@ -6,16 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	lm "github.com/luevano/libmangal"
+	"github.com/luevano/libmangal/netutil"
 	"github.com/luevano/luaprovider/lib/options"
 	"github.com/philippgille/gokv"
 	"github.com/philippgille/gokv/syncmap"
 	lua "github.com/yuin/gopher-lua"
 )
-
-const defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0"
 
 var _ lm.ProviderLoader = (*loader)(nil)
 
@@ -41,20 +39,15 @@ type Options struct {
 type FilterOptions = options.Filter
 
 func DefaultFilterOptions() FilterOptions {
-	return FilterOptions{
-		NSFW:                    false,
-		Language:                "en",
-		AvoidDuplicateChapters:  true,
-		ShowUnavailableChapters: false,
-	}
+	return options.DefaultFilter()
 }
 
 func DefaultOptions() Options {
 	// shared by every provider loaded with these options
 	store := syncmap.NewStore(syncmap.DefaultOptions)
 	return Options{
-		HTTPClient: &http.Client{Timeout: time.Minute},
-		UserAgent:  defaultUserAgent,
+		HTTPClient: netutil.NewClient(),
+		UserAgent:  netutil.BrowserUserAgent,
 		CacheStore: func(dbName, bucketName string) (gokv.Store, error) {
 			return store, nil
 		},

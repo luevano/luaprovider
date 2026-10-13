@@ -20,6 +20,16 @@ type Filter struct {
 	ShowUnavailableChapters bool
 }
 
+// DefaultFilter is the filter used when none is given.
+func DefaultFilter() Filter {
+	return Filter{
+		NSFW:                    false,
+		Language:                "en",
+		AvoidDuplicateChapters:  true,
+		ShowUnavailableChapters: false,
+	}
+}
+
 func Lib(filter Filter) *luadoc.Lib {
 	return &luadoc.Lib{
 		Name:        libName,

@@ -4,9 +4,9 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"time"
 
 	luadoc "github.com/luevano/gopher-luadoc"
+	"github.com/luevano/libmangal/netutil"
 	"github.com/luevano/luaprovider/lib/crypto"
 	"github.com/luevano/luaprovider/lib/encoding"
 	"github.com/luevano/luaprovider/lib/headless"
@@ -43,12 +43,13 @@ type Options struct {
 
 func DefaultOptions() *Options {
 	return &Options{
-		HTTPClient: &http.Client{Timeout: time.Minute},
+		HTTPClient: netutil.NewClient(),
 		CacheStore: syncmap.NewStore(syncmap.DefaultOptions),
+		UserAgent:  netutil.BrowserUserAgent,
 		Log:        func(string, ...any) {},
 		Status:     func(context.Context, string) {},
 		Track:      func(io.Closer) {},
-		Filter:     optionsLib.Filter{Language: "en"},
+		Filter:     optionsLib.DefaultFilter(),
 	}
 }
 
@@ -94,6 +95,9 @@ func withDefaults(options *Options) *Options {
 	}
 	if o.CacheStore == nil {
 		o.CacheStore = defaults.CacheStore
+	}
+	if o.UserAgent == "" {
+		o.UserAgent = defaults.UserAgent
 	}
 	if o.Log == nil {
 		o.Log = defaults.Log
