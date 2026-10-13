@@ -3,6 +3,7 @@ package luaprovider
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -128,7 +129,9 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 	// don't leave the state open if the script fails
 	defer func() {
 		if err != nil {
-			res.close()
+			if closeErr := res.close(); closeErr != nil {
+				err = errors.Join(err, fmt.Errorf("close: %w", closeErr))
+			}
 			state.Close()
 		}
 	}()

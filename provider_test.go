@@ -2,6 +2,7 @@ package luaprovider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -364,5 +365,26 @@ function ChapterPages(chapter) return {} end
 	}
 	if len(got) != 1 || got[0].Source != "test" || got[0].Message != "Test: page 2 of 5" {
 		t.Errorf("reported %+v", got)
+	}
+}
+
+// failingStore fails to close.
+type failingStore struct{ gokv.Store }
+
+func (failingStore) Close() error { return errors.New("store close failed") }
+
+func TestFailedLoadReportsCloseErrors(t *testing.T) {
+	options := DefaultOptions()
+	options.CacheStore = func(string, string) (gokv.Store, error) {
+		return failingStore{syncmap.NewStore(syncmap.DefaultOptions)}, nil
+	}
+	info := libmangal.ProviderInfo{ID: "test", Name: "Test", Version: "0.1.0"}
+	loader, err := NewLoader([]byte(`error("broken")`), info, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = loader.Load(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "broken") || !strings.Contains(err.Error(), "store close failed") {
+		t.Errorf("wanted the script and the close errors, got %v", err)
 	}
 }
