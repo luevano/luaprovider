@@ -653,7 +653,7 @@ end
 function html_selection:add_selection(selection)
 end
 
---- Converts the selection to Markdown. Can be used to show the contents of a selection in info page
+--- Converts the selection to Markdown (CommonMark, with tables), each element separated by a blank line. Can be used to show the contents of a selection in info page
 --- @return string markdown The Markdown representation of the selection.
 function html_selection:markdown()
 end
@@ -684,7 +684,7 @@ end
 function html_document:html()
 end
 
---- Converts the document to Markdown. Can be used to show the contents of a document in info page
+--- Converts the document to Markdown (CommonMark, with tables). Can be used to show the contents of a document in info page
 --- @return string markdown The Markdown representation of the document.
 function html_document:markdown()
 end

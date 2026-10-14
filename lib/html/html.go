@@ -434,7 +434,7 @@ func Lib() *luadoc.Lib {
 			},
 			{
 				Name:        "markdown",
-				Description: `Converts the selection to Markdown. Can be used to show the contents of a selection in info page`,
+				Description: `Converts the selection to Markdown (CommonMark, with tables), each element separated by a blank line. Can be used to show the contents of a selection in info page`,
 				Value:       selectionMarkdown,
 				Returns: []*luadoc.Param{
 					{
@@ -486,7 +486,7 @@ func Lib() *luadoc.Lib {
 			},
 			{
 				Name:        "markdown",
-				Description: `Converts the document to Markdown. Can be used to show the contents of a document in info page`,
+				Description: `Converts the document to Markdown (CommonMark, with tables). Can be used to show the contents of a document in info page`,
 				Value:       documentMarkdown,
 				Returns: []*luadoc.Param{
 					{

@@ -5,7 +5,6 @@ import (
 
 	"strings"
 
-	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/cixtor/readability"
 	"github.com/luevano/luaprovider/util"
@@ -306,9 +305,13 @@ func selectionAddBack(L *lua.LState) int {
 
 func selectionMarkdown(L *lua.LState) int {
 	selection := util.Check[*goquery.Selection](L, 1)
-	converter := md.NewConverter("", true, nil)
+	out, err := markdown(selection)
+	if err != nil {
+		util.Raise(L, fmt.Errorf("html markdown: %w", err))
+		return 0
+	}
 
-	L.Push(lua.LString(converter.Convert(selection)))
+	L.Push(lua.LString(out))
 	return 1
 }
 

@@ -294,3 +294,27 @@ assert(not pcall(urls.path_unescape, "%zz"), "bad escape")
 		t.Fatal(err)
 	}
 }
+
+func TestHTMLMarkdown(t *testing.T) {
+	script := `
+local sdk = require("sdk")
+local src = [[<div><h1>One Piece</h1><p>The <strong>Pirate King</strong> and <em>One Piece</em>, <a href="/chapters">chapters</a> * not a list</p><table><tr><th>Vol</th><th>Ch</th></tr><tr><td>1</td><td>1-8</td></tr></table><ul><li>a</li><li>b</li></ul></div>]]
+local doc = sdk.html.parse(src)
+local before = doc:html()
+
+local want = "# One Piece\n\n" ..
+	"The **Pirate King** and *One Piece*, [chapters](/chapters) * not a list\n\n" ..
+	"| Vol | Ch  |\n|-----|-----|\n| 1   | 1-8 |\n\n" ..
+	"- a\n- b"
+local got = doc:markdown()
+assert(got == want, "document markdown:\n" .. got)
+assert(doc:find("div"):markdown() == want, "selection markdown")
+assert(doc:find("li"):markdown() == "a\n\nb", "one block per node: " .. doc:find("li"):markdown())
+assert(doc:find("nothing"):markdown() == "", "empty selection")
+
+assert(doc:html() == before, "markdown changed the document:\n" .. doc:html())
+`
+	if err := run(t, script); err != nil {
+		t.Fatal(err)
+	}
+}

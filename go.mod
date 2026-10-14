@@ -3,7 +3,7 @@ module github.com/luevano/luaprovider
 go 1.27.0
 
 require (
-	github.com/JohannesKaufmann/html-to-markdown v1.6.0
+	github.com/JohannesKaufmann/html-to-markdown/v2 v2.5.2
 	github.com/PuerkitoBio/goquery v1.13.0
 	github.com/agnivade/levenshtein v1.2.1
 	github.com/cixtor/readability v1.0.0
@@ -20,6 +20,7 @@ require (
 )
 
 require (
+	github.com/JohannesKaufmann/dom v0.3.1 // indirect
 	github.com/andybalholm/cascadia v1.3.5 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/hhrutter/tiff v1.0.7 // indirect
