@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/libmangal/mangadata"
@@ -44,6 +45,8 @@ type provider struct {
 	fnChapterPages *lua.LFunction
 	// nil if the script doesn't define it
 	fnMangaByID *lua.LFunction
+
+	unusedKeys sync.Map // logged once, see decode
 }
 
 var _ libmangal.MangaByIDProvider = mangaByIDProvider{}
@@ -243,10 +246,23 @@ func (p *provider) SearchMangas(
 	return mangas, nil
 }
 
+// decode maps a table the script returned (what: "manga", "volume"...) into dst and logs the keys
+// mangal doesn't know, once each, to help spot typos.
+func (p *provider) decode(what string, table *lua.LTable, dst any) (mapstructure.Metadata, error) {
+	md, err := mapTable(table, dst)
+	slices.Sort(md.Unused)
+	for _, key := range md.Unused {
+		if _, logged := p.unusedKeys.LoadOrStore(what+"."+key, true); !logged {
+			p.log.Log("%s key %q isn't used by mangal", what, key)
+		}
+	}
+	return md, err
+}
+
 // toManga converts a manga table the script returned.
 func (p *provider) toManga(table *lua.LTable) (*luaManga, error) {
 	var manga luaManga
-	if err := mapTable(table, &manga); err != nil {
+	if _, err := p.decode("manga", table, &manga); err != nil {
 		return nil, err
 	}
 	if manga.ID == "" {
@@ -278,7 +294,7 @@ func (p *provider) MangaVolumes(
 		p.fnMangaVolumes,
 		func(_ int, table *lua.LTable) (mangadata.Volume, error) {
 			var volume luaVolume
-			if err := mapTable(table, &volume); err != nil {
+			if _, err := p.decode("volume", table, &volume); err != nil {
 				return nil, err
 			}
 
@@ -313,14 +329,15 @@ func (p *provider) VolumeChapters(
 		p.fnVolumeChapters,
 		func(_ int, table *lua.LTable) (mangadata.Chapter, error) {
 			var chapter luaChapter
-			if err := mapTable(table, &chapter); err != nil {
+			md, err := p.decode("chapter", table, &chapter)
+			if err != nil {
 				return nil, err
 			}
 			if chapter.Title == "" {
 				return nil, errors.New("missing title")
 			}
 			// chapters without a number (e.g. "Extra") go right after the previous one
-			if table.RawGetString("number") == lua.LNil {
+			if slices.Contains(md.Unset, "number") {
 				chapter.Number = nextExtraNumber(last)
 			}
 			last = chapter.Number
@@ -361,7 +378,7 @@ func (p *provider) ChapterPages(
 		p.fnChapterPages,
 		func(_ int, table *lua.LTable) (mangadata.Page, error) {
 			var page luaPage
-			if err := mapTable(table, &page); err != nil {
+			if _, err := p.decode("page", table, &page); err != nil {
 				return nil, err
 			}
 			page.chapter = c
