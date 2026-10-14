@@ -214,10 +214,10 @@ func TestMapTableFields(t *testing.T) {
 
 func TestDecodeLogsUnusedKeys(t *testing.T) {
 	p := loadTestProvider(t, `
-function SearchMangas(query) return {{id = "1", title = "t"}} end
+function SearchMangas(query) return {{id = "1", title = "t", metadata = {summery = "typo", score = 1}}} end
 function MangaVolumes(manga) return {{number = 1, label = "x"}} end
 function VolumeChapters(volume)
-	return {{Title = "One", Number = 3, titel = "typo"}, {title = "Extra", titel = "typo"}}
+	return {{Title = "One", Number = 3, titel = "typo", id = "kept for the script"}, {title = "Extra", titel = "typo", uri = "typo"}}
 end
 function ChapterPages(chapter) return {} end
 `)
@@ -252,8 +252,38 @@ function ChapterPages(chapter) return {} end
 			unused = append(unused, msg)
 		}
 	}
-	want := []string{`test: volume key "label" isn't used by mangal`, `test: chapter key "titel" isn't used by mangal`}
+	// keys kept for the script (label, id, score) aren't typos
+	want := []string{
+		`test: manga key "metadata.summery" isn't used by mangal, did you mean "summary"?`,
+		`test: chapter key "titel" isn't used by mangal, did you mean "title"?`,
+		`test: chapter key "uri" isn't used by mangal, did you mean "url"?`,
+	}
 	if !slices.Equal(unused, want) {
 		t.Errorf("logged %q, wanted %q", unused, want)
+	}
+}
+
+func TestLikelyTypo(t *testing.T) {
+	fields := luaFields(reflect.TypeFor[luaManga]())
+	for key, want := range map[string]string{
+		"titel":             "title",
+		"Titl":              "title",
+		"uri":               "url",
+		"metadata.summery":  "summary",
+		"metadata.tag_lsit": "tag_list",
+		"ids":               "",
+		"label":             "",
+		"data":              "",
+		"summery":           "", // not a top level field
+		"metadata.title":    "",
+		"metadata.score":    "",
+	} {
+		if got, _ := likelyTypo(key, fields); got != want {
+			t.Errorf("%q: got %q, want %q", key, got, want)
+		}
+	}
+	// saturno's chapters keep their id for the script
+	if got, typo := likelyTypo("id", luaFields(reflect.TypeFor[luaChapter]())); typo {
+		t.Errorf("chapter id: got %q", got)
 	}
 }

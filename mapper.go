@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/agnivade/levenshtein"
 	"github.com/go-viper/mapstructure/v2"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -162,4 +163,51 @@ func numberHook(_, to reflect.Type, data any) (any, error) {
 		return strings.TrimSpace(s), nil
 	}
 	return data, nil
+}
+
+// luaFields are the lua tags of struct t's fields, "parent.child" for nested structs.
+func luaFields(t reflect.Type) []string {
+	for t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	var fields []string
+	for field := range t.Fields() {
+		tag, _, _ := strings.Cut(field.Tag.Get("lua"), ",")
+		if tag == "" || tag == "-" {
+			continue
+		}
+		fields = append(fields, tag)
+		ft := field.Type
+		for ft.Kind() == reflect.Pointer {
+			ft = ft.Elem()
+		}
+		if ft.Kind() == reflect.Struct {
+			for _, child := range luaFields(ft) {
+				fields = append(fields, tag+"."+child)
+			}
+		}
+	}
+	return fields
+}
+
+// likelyTypo is the field an unused key ("parent.child" if nested) looks like a typo of: at
+// most 2 edits away, and less than half the field's length (so short keys like "id" aren't
+// typos of "url"). Scripts can add keys of their own, those aren't typos.
+func likelyTypo(key string, fields []string) (string, bool) {
+	parent, name := "", strings.ToLower(key)
+	if i := strings.LastIndex(key, "."); i >= 0 {
+		parent, name = key[:i+1], strings.ToLower(key[i+1:])
+	}
+	best, bestDistance := "", 3
+	for _, field := range fields {
+		rest, ok := strings.CutPrefix(field, parent)
+		if !ok || strings.Contains(rest, ".") {
+			continue
+		}
+		d := levenshtein.ComputeDistance(name, rest)
+		if d < bestDistance && 2*d < len(rest) {
+			best, bestDistance = rest, d
+		}
+	}
+	return best, best != ""
 }

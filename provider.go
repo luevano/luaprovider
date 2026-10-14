@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"slices"
 	"sync"
 	"time"
@@ -247,13 +248,22 @@ func (p *provider) SearchMangas(
 }
 
 // decode maps a table the script returned (what: "manga", "volume"...) into dst and logs the keys
-// mangal doesn't know, once each, to help spot typos.
+// mangal doesn't use that look like typos of a field, once each. Other keys are the script's
+// own (the tables are passed back to it).
 func (p *provider) decode(what string, table *lua.LTable, dst any) (mapstructure.Metadata, error) {
 	md, err := mapTable(table, dst)
 	slices.Sort(md.Unused)
+	var fields []string
+	if len(md.Unused) > 0 {
+		fields = luaFields(reflect.TypeOf(dst))
+	}
 	for _, key := range md.Unused {
+		field, typo := likelyTypo(key, fields)
+		if !typo {
+			continue
+		}
 		if _, logged := p.unusedKeys.LoadOrStore(what+"."+key, true); !logged {
-			p.log.Log("%s key %q isn't used by mangal", what, key)
+			p.log.Log("%s key %q isn't used by mangal, did you mean %q?", what, key, field)
 		}
 	}
 	return md, err
