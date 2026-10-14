@@ -9,8 +9,8 @@ require (
 	github.com/agnivade/levenshtein v1.2.1
 	github.com/go-rod/rod v0.116.2
 	github.com/go-viper/mapstructure/v2 v2.5.0
-	github.com/luevano/gopher-luadoc v0.3.3
-	github.com/luevano/libmangal v0.29.0
+	github.com/luevano/gopher-luadoc v0.3.4
+	github.com/luevano/libmangal v0.30.0
 	github.com/philippgille/gokv v0.7.0
 	github.com/philippgille/gokv/syncmap v0.7.0
 	github.com/robertkrimen/otto v0.5.1
@@ -29,11 +29,12 @@ require (
 	github.com/hhrutter/tiff v1.0.7 // indirect
 	github.com/itlightning/dateparse v0.2.1 // indirect
 	github.com/mattn/go-runewidth v0.0.31 // indirect
-	github.com/pdfcpu/pdfcpu v0.16.1 // indirect
+	github.com/pdfcpu/pdfcpu v0.16.2 // indirect
 	github.com/philippgille/gokv/encoding v0.7.0 // indirect
 	github.com/philippgille/gokv/util v0.7.0 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
+	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/ysmood/fetchup v0.3.0 // indirect
 	github.com/ysmood/goob v0.4.0 // indirect
 	github.com/ysmood/got v0.42.3 // indirect
