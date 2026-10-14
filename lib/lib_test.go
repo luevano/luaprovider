@@ -318,3 +318,37 @@ assert(doc:html() == before, "markdown changed the document:\n" .. doc:html())
 		t.Fatal(err)
 	}
 }
+
+const readablePage = `<html><head><title>One Piece</title></head><body>
+<nav><a href="/">Home</a> | <a href="/latest">Latest</a></nav>
+<div class="sidebar">Ads here <a href="/ad">click</a></div>
+<article><h1>One Piece</h1>
+<p>Gol D. Roger was known as the <strong>Pirate King</strong>, the strongest and most infamous being to have sailed the Grand Line. The capture and death of Roger by the World Government brought a change throughout the world.</p>
+<p>His last words before his death revealed the location of the greatest treasure in the world, <em>One Piece</em>. It was this revelation that brought about the Grand Age of Pirates, men who dreamed of finding One Piece.</p>
+<p>See <a href="/manga/one-piece/chapters">chapters</a> and <img src="cover.jpg" alt="cover"></p>
+</article><footer>(c) site</footer></body></html>`
+
+func TestHTMLSimplified(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+	lib.Preload(L, lib.DefaultOptions())
+	L.SetContext(context.Background())
+	L.SetGlobal("page", lua.LString(readablePage))
+	script := `
+local doc = require("sdk").html.parse(page)
+local simple = doc:simplified()
+local text = simple:selection():text()
+assert(text:find("Pirate King", 1, true), "article kept:\n" .. text)
+assert(not text:find("Ads here", 1, true) and not text:find("(c) site", 1, true), "clutter removed:\n" .. text)
+
+for _, s in ipairs({simple, doc:find("body"):simplified()}) do
+	local href = s:find("a"):first():attr("href")
+	assert(href == "/manga/one-piece/chapters", "link rewritten: " .. tostring(href))
+	local src = s:find("img"):first():attr("src")
+	assert(src == "cover.jpg", "image rewritten: " .. tostring(src))
+end
+`
+	if err := L.DoString(script); err != nil {
+		t.Fatal(err)
+	}
+}

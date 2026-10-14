@@ -658,7 +658,7 @@ end
 function html_selection:markdown()
 end
 
---- Gets the readable part of the selection (simplified view). Similar to reader mode in browsers.
+--- Gets the readable part of the selection (simplified view). Similar to reader mode in browsers. Relative links are kept as they are.
 --- @return html_selection selection A selection object.
 function html_selection:simplified()
 end
@@ -689,7 +689,7 @@ end
 function html_document:markdown()
 end
 
---- Gets the readable part of the document (simplified view). Similar to reader mode in browsers.
+--- Gets the readable part of the document (simplified view). Similar to reader mode in browsers. Relative links are kept as they are.
 --- @return html_document html The simplified document
 function html_document:simplified()
 end

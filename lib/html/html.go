@@ -446,7 +446,7 @@ func Lib() *luadoc.Lib {
 			},
 			{
 				Name:        "simplified",
-				Description: `Gets the readable part of the selection (simplified view). Similar to reader mode in browsers.`,
+				Description: `Gets the readable part of the selection (simplified view). Similar to reader mode in browsers. Relative links are kept as they are.`,
 				Value:       selectionSimplified,
 				Returns: []*luadoc.Param{
 					selection,
@@ -498,7 +498,7 @@ func Lib() *luadoc.Lib {
 			},
 			{
 				Name:        "simplified",
-				Description: `Gets the readable part of the document (simplified view). Similar to reader mode in browsers.`,
+				Description: `Gets the readable part of the document (simplified view). Similar to reader mode in browsers. Relative links are kept as they are.`,
 				Value:       documentSimplified,
 				Returns: []*luadoc.Param{
 					{

@@ -2,12 +2,14 @@ package html
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
+	"codeberg.org/readeck/go-readability/v2"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/cixtor/readability"
 	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
+	xhtml "golang.org/x/net/html"
 )
 
 const documentTypeName = libName + "_document"
@@ -73,14 +75,29 @@ func documentSimplified(L *lua.LState) int {
 		return 0
 	}
 
-	article, err := readability.New().Parse(strings.NewReader(html), "https://example.com")
+	simplified, err := simplify(html, document.Url)
 	if err != nil {
 		util.Raise(L, fmt.Errorf("html simplify: %w", err))
 		return 0
 	}
 
-	document = goquery.NewDocumentFromNode(article.Node)
-
-	util.Push(L, document, documentTypeName)
+	util.Push(L, simplified, documentTypeName)
 	return 1
+}
+
+// simplify keeps the readable part of the html. Relative links are made
+// absolute only when the page url is known.
+func simplify(html string, pageURL *url.URL) (*goquery.Document, error) {
+	article, err := readability.FromReader(strings.NewReader(html), pageURL)
+	if err != nil {
+		return nil, err
+	}
+
+	node := article.Node
+	if node == nil {
+		node = &xhtml.Node{Type: xhtml.DocumentNode}
+	}
+	document := goquery.NewDocumentFromNode(node)
+	document.Url = pageURL
+	return document, nil
 }

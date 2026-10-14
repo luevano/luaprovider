@@ -3,10 +3,7 @@ package html
 import (
 	"fmt"
 
-	"strings"
-
 	"github.com/PuerkitoBio/goquery"
-	"github.com/cixtor/readability"
 	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -324,13 +321,11 @@ func selectionSimplified(L *lua.LState) int {
 		return 0
 	}
 
-	article, err := readability.New().Parse(strings.NewReader(html), "https://example.com")
+	document, err := simplify(html, nil)
 	if err != nil {
 		util.Raise(L, fmt.Errorf("html simplify: %w", err))
 		return 0
 	}
-
-	document := goquery.NewDocumentFromNode(article.Node)
 
 	util.Push(L, document.Selection, selectionTypeName)
 	return 1
