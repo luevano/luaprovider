@@ -11,14 +11,9 @@ const libName = "options"
 // Filter: The user's filters, same as mangoprovider's.
 type Filter = libmangal.FilterOptions
 
-// DefaultFilter is the filter used when none is given.
+// DefaultFilter is the filter used when none is given: libmangal's, it filters nothing.
 func DefaultFilter() Filter {
-	return Filter{
-		NSFW:                    false,
-		Language:                "en",
-		AvoidDuplicateChapters:  true,
-		ShowUnavailableChapters: false,
-	}
+	return libmangal.DefaultFilterOptions()
 }
 
 func Lib(filter Filter) *luadoc.Lib {
@@ -33,7 +28,7 @@ func Lib(filter Filter) *luadoc.Lib {
 			},
 			{
 				Name:        "language",
-				Description: `Language of the mangas/chapters, e.g. "en".`,
+				Description: `Language of the mangas/chapters, e.g. "en", empty for any language.`,
 				Value:       lua.LString(filter.Language),
 			},
 			{

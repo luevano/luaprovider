@@ -222,7 +222,9 @@ function ChapterPages() return {} end
 }
 
 func TestUnavailableChaptersAreHidden(t *testing.T) {
-	p := loadTestProvider(t, testScript)
+	options := DefaultOptions()
+	options.Filter.ShowUnavailableChapters = false
+	p := loadTestProviderWith(t, testScript, options)
 	ctx := context.Background()
 
 	mangas, err := p.SearchMangas(ctx, "x")

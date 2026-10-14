@@ -3,6 +3,7 @@ package luaprovider
 import (
 	"testing"
 
+	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/netutil"
 	"github.com/luevano/luaprovider/lib"
 )
@@ -17,5 +18,11 @@ func TestDefaultsAgree(t *testing.T) {
 	}
 	if provider.HTTPClient.Timeout != netutil.DefaultTimeout || sdk.HTTPClient.Timeout != netutil.DefaultTimeout {
 		t.Errorf("wanted netutil.DefaultTimeout, got luaprovider %s, lib %s", provider.HTTPClient.Timeout, sdk.HTTPClient.Timeout)
+	}
+}
+
+func TestDefaultFilterFiltersNothing(t *testing.T) {
+	if got, want := DefaultFilterOptions(), libmangal.DefaultFilterOptions(); got != want {
+		t.Errorf("got %+v, want libmangal's %+v", got, want)
 	}
 }

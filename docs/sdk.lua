@@ -1485,7 +1485,7 @@ end
 --- The user's options, scripts should respect them when the source supports it.
 --- @class options
 --- @field public nsfw boolean Whether the results can include NSFW content.
---- @field public language string Language of the mangas/chapters, e.g. "en".
+--- @field public language string Language of the mangas/chapters, e.g. "en", empty for any language.
 --- @field public avoid_duplicate_chapters boolean Keep only one chapter per number.
 --- @field public show_unavailable_chapters boolean Whether chapters that can't be downloaded are shown, those with "unavailable" set are dropped otherwise.
 local options = {}
