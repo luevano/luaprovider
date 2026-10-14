@@ -5,10 +5,10 @@ go 1.27.0
 require (
 	github.com/JohannesKaufmann/html-to-markdown v1.6.0
 	github.com/PuerkitoBio/goquery v1.13.0
+	github.com/agnivade/levenshtein v1.2.1
 	github.com/cixtor/readability v1.0.0
 	github.com/go-rod/rod v0.116.2
 	github.com/go-viper/mapstructure/v2 v2.5.0
-	github.com/ka-weihe/fast-levenshtein v0.0.0-20201227151214-4c99ee36a1ba
 	github.com/luevano/gopher-luadoc v0.3.3
 	github.com/luevano/libmangal v0.29.0
 	github.com/philippgille/gokv v0.7.0

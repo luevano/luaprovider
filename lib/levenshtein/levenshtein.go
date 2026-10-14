@@ -1,7 +1,7 @@
 package levenshtein
 
 import (
-	levenshtein "github.com/ka-weihe/fast-levenshtein"
+	"github.com/agnivade/levenshtein"
 	luadoc "github.com/luevano/gopher-luadoc"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -43,7 +43,7 @@ func distance(L *lua.LState) int {
 	s1 := L.CheckString(1)
 	s2 := L.CheckString(2)
 
-	L.Push(lua.LNumber(levenshtein.Distance(s1, s2)))
+	L.Push(lua.LNumber(levenshtein.ComputeDistance(s1, s2)))
 
 	return 1
 }
