@@ -1457,6 +1457,17 @@ end
 function http_response:status()
 end
 
+--- Limit the requests to permits per seconds (like keiyoushi's rateLimit), call it when the script loads.
+--- Requests wait for every limit they match, page image downloads too; waits of a second or more show up in the provider status.
+--- The match is a host (that one, not its subdomains), optionally followed by a path prefix ("api.site.com/at-home/"); all requests if not given.
+--- The burst is how many requests can go at once, 1 by default: a bigger one lets more than permits through in a period.
+--- @param permits number Requests allowed per period, at least 1
+--- @param seconds number The period, in seconds
+--- @param match string? Host and optional path prefix the limit applies to
+--- @param burst number? Requests that can go at once, 1 by default
+function http.rate_limit(permits, seconds, match, burst)
+end
+
 --- Create a new HTTP request
 --- @param method 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'CONNECT' HTTP method
 --- @param url string URL

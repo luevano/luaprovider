@@ -10,6 +10,7 @@ import (
 	lm "github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/libmangal/netutil"
+	luahttp "github.com/luevano/luaprovider/lib/http"
 	"github.com/luevano/luaprovider/lib/options"
 	"github.com/philippgille/gokv"
 	"github.com/philippgille/gokv/syncmap"
@@ -34,6 +35,10 @@ type Options struct {
 
 	// Filter options, scripts read them from sdk.options.
 	Filter FilterOptions
+
+	// RateLimits of the provider's requests (e.g. from its manifest), on top of the ones the
+	// script sets with sdk.http.rate_limit. Page images are limited too.
+	RateLimits []luahttp.RateLimit
 }
 
 // FilterOptions are the same as mangoprovider's.
@@ -110,6 +115,12 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 		options.CacheStore = defaults.CacheStore
 	}
 	log := logger.NewProviderLogger(l.info.ID, l.info.Name)
+	limiter := luahttp.NewLimiter(func(ctx context.Context, message string) { log.Status(ctx, "%s", message) })
+	for _, limit := range options.RateLimits {
+		if err := limiter.Add(limit); err != nil {
+			return nil, err
+		}
+	}
 	res := &resources{}
 
 	// opened once, closed with the provider
@@ -119,7 +130,7 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 	}
 	res.track(store)
 
-	state := newState(options, store, log, res)
+	state := newState(options, limiter, store, log, res)
 	// don't leave the state open if the script fails
 	defer func() {
 		if err != nil {
@@ -144,6 +155,8 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 		return nil, callError(ctx, err)
 	}
 
+	// page images wait for the same limits as the script's requests
+	options.HTTPClient = limiter.Client(options.HTTPClient)
 	p := &provider{
 		info:      l.info,
 		options:   options,

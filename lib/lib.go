@@ -27,8 +27,12 @@ import (
 )
 
 type Options struct {
+	// HTTPClient: Sends the http requests, through RateLimiter's limits.
 	HTTPClient *http.Client
-	CacheStore gokv.Store
+	// RateLimiter: The limits of the http requests, set by the scripts (http.rate_limit), a new
+	// one if nil. Share it with whatever else makes the provider's requests (e.g. page images).
+	RateLimiter *httpLib.Limiter
+	CacheStore  gokv.Store
 	// UserAgent: Default User-Agent header of http requests.
 	UserAgent string
 	// Log: Logs a message of the provider, used by the log library.
@@ -74,9 +78,10 @@ func Lib(L *lua.LState, options *Options) *luadoc.Lib {
 			encoding.Lib(L),
 			headless.Lib(options.Track, options.Log, options.Status),
 			httpLib.Lib(httpLib.Options{
-				HTTPClient: options.HTTPClient,
+				HTTPClient: options.RateLimiter.Client(options.HTTPClient),
 				CacheStore: options.CacheStore,
 				UserAgent:  options.UserAgent,
+				Limiter:    options.RateLimiter,
 			}),
 			log.Lib(options.Log, options.Status),
 			optionsLib.Lib(options.Filter),
@@ -107,6 +112,9 @@ func withDefaults(options *Options) *Options {
 	}
 	if o.Track == nil {
 		o.Track = defaults.Track
+	}
+	if o.RateLimiter == nil {
+		o.RateLimiter = httpLib.NewLimiter(o.Status)
 	}
 	return &o
 }

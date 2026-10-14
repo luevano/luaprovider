@@ -12,13 +12,14 @@ import (
 
 	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/luaprovider/lib"
+	luahttp "github.com/luevano/luaprovider/lib/http"
 	"github.com/luevano/luaprovider/util"
 	"github.com/philippgille/gokv"
 	"github.com/samber/lo"
 	lua "github.com/yuin/gopher-lua"
 )
 
-func newState(options Options, store gokv.Store, log *logger.ProviderLogger, resources *resources) *lua.LState {
+func newState(options Options, limiter *luahttp.Limiter, store gokv.Store, log *logger.ProviderLogger, resources *resources) *lua.LState {
 	libs := []lua.LGFunction{
 		lua.OpenBase,
 		lua.OpenTable,
@@ -38,13 +39,14 @@ func newState(options Options, store gokv.Store, log *logger.ProviderLogger, res
 	}
 
 	lib.Preload(state, &lib.Options{
-		HTTPClient: options.HTTPClient,
-		CacheStore: store,
-		UserAgent:  options.UserAgent,
-		Log:        log.Log,
-		Status:     func(ctx context.Context, message string) { log.Status(ctx, "%s", message) },
-		Track:      resources.track,
-		Filter:     options.Filter,
+		HTTPClient:  options.HTTPClient,
+		RateLimiter: limiter,
+		CacheStore:  store,
+		UserAgent:   options.UserAgent,
+		Log:         log.Log,
+		Status:      func(ctx context.Context, message string) { log.Status(ctx, "%s", message) },
+		Track:       resources.track,
+		Filter:      options.Filter,
 	})
 
 	pkg := state.GetGlobal("package").(*lua.LTable)

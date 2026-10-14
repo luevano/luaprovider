@@ -11,9 +11,12 @@ import (
 const libName = "http"
 
 type Options struct {
+	// HTTPClient sends the requests, through Limiter's limits.
 	HTTPClient *http.Client
 	CacheStore gokv.Store
 	UserAgent  string
+	// Limiter gets the limits of rate_limit.
+	Limiter *Limiter
 }
 
 func Lib(options Options) *luadoc.Lib {
@@ -255,6 +258,38 @@ func Lib(options Options) *luadoc.Lib {
 		},
 		Classes: []*luadoc.Class{classRequest, classResponse},
 		Funcs: []*luadoc.Func{
+			{
+				Name: "rate_limit",
+				Description: `Limit the requests to permits per seconds (like keiyoushi's rateLimit), call it when the script loads.
+Requests wait for every limit they match, page image downloads too; waits of a second or more show up in the provider status.
+The match is a host (that one, not its subdomains), optionally followed by a path prefix ("api.site.com/at-home/"); all requests if not given.
+The burst is how many requests can go at once, 1 by default: a bigger one lets more than permits through in a period.`,
+				Value: rateLimit(options.Limiter),
+				Params: []*luadoc.Param{
+					{
+						Name:        "permits",
+						Description: "Requests allowed per period, at least 1",
+						Type:        luadoc.Number,
+					},
+					{
+						Name:        "seconds",
+						Description: "The period, in seconds",
+						Type:        luadoc.Number,
+					},
+					{
+						Name:        "match",
+						Description: "Host and optional path prefix the limit applies to",
+						Type:        luadoc.String,
+						Optional:    true,
+					},
+					{
+						Name:        "burst",
+						Description: "Requests that can go at once, 1 by default",
+						Type:        luadoc.Number,
+						Optional:    true,
+					},
+				},
+			},
 			{
 				Name:        "request",
 				Description: "Create a new HTTP request",

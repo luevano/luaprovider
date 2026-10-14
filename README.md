@@ -106,6 +106,10 @@ use it to get a manga again without searching; without it they search and match 
 
 Errors raised with `error()` are plain messages. For HTTP errors, `response:check()` raises one the app can tell apart (not found, rate limited), and `send` already does for 429.
 
+If the site documents a rate limit, set it when the script loads with
+`sdk.http.rate_limit(permits, seconds[, match[, burst]])`, e.g. `sdk.http.rate_limit(1, 2, "site.com")`
+for one request every 2 seconds to `site.com`. Requests (page images too) wait for every limit they match.
+
 ---
 
 The scripts can load sdk with
