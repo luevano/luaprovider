@@ -51,6 +51,10 @@ func TestGetPageImageRetriesRateLimits(t *testing.T) {
 	if !errors.As(err, &rateLimit) || !errors.Is(err, ErrRateLimited) || calls.Load() != pageRetries+1 {
 		t.Errorf("always 429: %v after %d calls, want a RateLimitError after %d", err, calls.Load(), pageRetries+1)
 	}
+	// the site didn't say, mangal waits as long as the next retry would have
+	if rateLimit != nil && (rateLimit.RetryAfter != pageRetryWait<<pageRetries || rateLimit.URL != page("limited.png").URL) {
+		t.Errorf("always 429: retry after %s for %s, want %s", rateLimit.RetryAfter, rateLimit.URL, pageRetryWait<<pageRetries)
+	}
 
 	calls.Store(0)
 	_, err = p.GetPageImage(context.Background(), page("missing.png"))

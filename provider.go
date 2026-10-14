@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"reflect"
 	"slices"
@@ -16,6 +15,7 @@ import (
 	"github.com/luevano/libmangal/logger"
 	"github.com/luevano/libmangal/mangadata"
 	"github.com/luevano/libmangal/metadata"
+	"github.com/luevano/libmangal/netutil"
 	luahttp "github.com/luevano/luaprovider/lib/http"
 	"github.com/luevano/luaprovider/util"
 	"github.com/samber/lo"
@@ -467,65 +467,34 @@ func (p *provider) GetPageImage(
 // pageRetries is how many times a page is tried again after a 429, waiting Retry-After
 // (at most maxRetryWait) or pageRetryWait, doubled each time.
 const (
-	pageRetries  = 3
-	maxRetryWait = time.Minute
+	pageRetries  = libmangal.DefaultPageRetries
+	maxRetryWait = libmangal.DefaultMaxPageRetryWait
 )
 
-var pageRetryWait = 5 * time.Second
+var pageRetryWait = libmangal.DefaultPageRetryWait
 
+// getPageImage gets the page, an *HTTPError or *RateLimitError for an error status.
 func (p *provider) getPageImage(
 	ctx context.Context,
 	page luaPage,
 ) ([]byte, error) {
-	wait := pageRetryWait
-	for retry := 0; ; retry++ {
-		image, err := p.getPageImageOnce(ctx, page)
-		var rateLimit *RateLimitError
-		if !errors.As(err, &rateLimit) || retry == pageRetries {
-			return image, err
-		}
-		after := rateLimit.RetryAfter
-		if after == 0 {
-			after = wait
-			wait *= 2
-		}
-		after = min(after, maxRetryWait)
-		p.log.Status(ctx, "page of chapter %q: 429 too many requests, retry %d/%d in %s", page.chapter, retry+1, pageRetries, after.Round(time.Second))
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-time.After(after):
-		}
+	image, err := libmangal.FetchPageImage(ctx, p.options.HTTPClient, libmangal.PageImageRequest{
+		URL:     page.URL,
+		Headers: page.Headers,
+		Cookies: page.Cookies,
+	}, libmangal.FetchPageImageOptions{
+		Retries:      pageRetries,
+		RetryWait:    pageRetryWait,
+		MaxRetryWait: maxRetryWait,
+		OnRetry: func(retry int, wait time.Duration) {
+			p.log.Status(ctx, "page of chapter %q: 429 too many requests, retry %d/%d in %s", page.chapter, retry, pageRetries, wait.Round(time.Second))
+		},
+		StatusError: luahttp.NewError,
+	})
+	// the same error as the scripts' requests
+	var rateLimit *netutil.RateLimitError
+	if errors.As(err, &rateLimit) {
+		return nil, &RateLimitError{Method: http.MethodGet, URL: page.URL, RetryAfter: rateLimit.RetryAfter}
 	}
-}
-
-// getPageImageOnce gets the page, an *HTTPError or *RateLimitError for an error status.
-func (p *provider) getPageImageOnce(
-	ctx context.Context,
-	page luaPage,
-) ([]byte, error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, page.URL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	for key, value := range page.Headers {
-		request.Header.Set(key, value)
-	}
-
-	for key, value := range page.Cookies {
-		request.AddCookie(&http.Cookie{Name: key, Value: value})
-	}
-
-	response, err := p.options.HTTPClient.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != http.StatusOK {
-		return nil, luahttp.NewError(request, response)
-	}
-
-	return io.ReadAll(response.Body)
+	return image, err
 }
