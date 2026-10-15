@@ -6,6 +6,8 @@ import (
 	luadoc "github.com/luevano/gopher-luadoc"
 	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 const libName = "strings"
@@ -761,7 +763,14 @@ func countAny(L *lua.LState) int {
 	s := L.CheckString(1)
 	cutset := L.CheckString(2)
 
-	L.Push(lua.LNumber(strings.Count(s, cutset)))
+	var n int
+	for _, r := range s {
+		if strings.ContainsRune(cutset, r) {
+			n++
+		}
+	}
+
+	L.Push(lua.LNumber(n))
 	return 1
 }
 
@@ -816,6 +825,6 @@ func duplicate(L *lua.LState) int {
 func title(L *lua.LState) int {
 	s := L.CheckString(1)
 
-	L.Push(lua.LString(strings.ToTitle(s)))
+	L.Push(lua.LString(cases.Title(language.Und, cases.NoLower).String(s)))
 	return 1
 }
