@@ -36,8 +36,8 @@ github.com/itlightning/dateparse v0.2.1 h1:AB0NJTyI0HYcerEUMovKZOiQVBg1mBPxgAnWQ
 github.com/itlightning/dateparse v0.2.1/go.mod h1:xHlmL8lT0L9JIBlaKotRwsoDYpKJskXpiU9ZwbbSkNA=
 github.com/luevano/gopher-luadoc v0.3.4 h1:O/p9AmhSts2Yt4N0mk7ixvXU1MJJOKt2fK/dFpr/htc=
 github.com/luevano/gopher-luadoc v0.3.4/go.mod h1:j97VNp6HTJLHiF3p+v2Z0SZOX7RchqD5MJnpzTU753Q=
-github.com/luevano/libmangal v0.30.0 h1:/OcN3+ahET79Dnr8j9OY3HIAGrVZ9ZqH8rJhBIjVZLw=
-github.com/luevano/libmangal v0.30.0/go.mod h1:oawvhBlR/BVdzZDUcLdIvqLtVRWWPa+5nIn8Ilfp0fk=
+github.com/luevano/libmangal v0.31.0 h1:AdDL8Y4yRjbWHLUaGesjhkX7VOGAHgQvhIb5VHX8TWk=
+github.com/luevano/libmangal v0.31.0/go.mod h1:oawvhBlR/BVdzZDUcLdIvqLtVRWWPa+5nIn8Ilfp0fk=
 github.com/mattn/go-runewidth v0.0.31 h1:1oCV4ReTlosDBc6rYRw5cL8S/4y8iv5oRl4SJ5IBgwo=
 github.com/mattn/go-runewidth v0.0.31/go.mod h1:3qAiGCV4Koz/yuveO58qUefmUTRm8r0IGEXZ9jeHp/8=
 github.com/pdfcpu/pdfcpu v0.16.2 h1:x6Y+jOn4Ieu3TZ+B3eNgjS9aLsybm3azz6pEMiZfE2Q=
