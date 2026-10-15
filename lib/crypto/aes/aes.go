@@ -16,48 +16,48 @@ func Lib() *luadoc.Lib {
 		Funcs: []*luadoc.Func{
 			{
 				Name:        "encrypt",
-				Description: "Encrypts a string using AES.",
+				Description: "Encrypts a single 16-byte block with AES (raw block cipher, no mode or padding). Raises an error unless value is exactly 16 bytes.",
 				Value:       encrypt,
 				Params: []*luadoc.Param{
 					{
 						Name:        "key",
-						Description: "The key to use for encryption.",
+						Description: "The key to use for encryption: 16, 24 or 32 bytes (AES-128, AES-192 or AES-256).",
 						Type:        luadoc.String,
 					},
 					{
 						Name:        "value",
-						Description: "The string to encrypt.",
+						Description: "The 16-byte block to encrypt.",
 						Type:        luadoc.String,
 					},
 				},
 				Returns: []*luadoc.Param{
 					{
 						Name:        "encrypted",
-						Description: "The encrypted string.",
+						Description: "The encrypted 16-byte block.",
 						Type:        luadoc.String,
 					},
 				},
 			},
 			{
 				Name:        "decrypt",
-				Description: "Decrypts a string using AES.",
+				Description: "Decrypts a single 16-byte block with AES (raw block cipher, no mode or padding). Raises an error unless value is exactly 16 bytes.",
 				Value:       decrypt,
 				Params: []*luadoc.Param{
 					{
 						Name:        "key",
-						Description: "The key to use for decryption.",
+						Description: "The key to use for decryption: 16, 24 or 32 bytes (AES-128, AES-192 or AES-256).",
 						Type:        luadoc.String,
 					},
 					{
 						Name:        "value",
-						Description: "The string to decrypt.",
+						Description: "The 16-byte block to decrypt.",
 						Type:        luadoc.String,
 					},
 				},
 				Returns: []*luadoc.Param{
 					{
 						Name:        "decrypted",
-						Description: "The decrypted string.",
+						Description: "The decrypted 16-byte block.",
 						Type:        luadoc.String,
 					},
 				},
@@ -75,6 +75,10 @@ func encrypt(L *lua.LState) int {
 		util.Raise(L, fmt.Errorf("aes encrypt: %w", err))
 		return 0
 	}
+	if len(value) != aes.BlockSize {
+		util.Raise(L, fmt.Errorf("aes encrypt: value must be exactly %d bytes, got %d", aes.BlockSize, len(value)))
+		return 0
+	}
 
 	encrypted := make([]byte, len(value))
 	cipher.Encrypt(encrypted, []byte(value))
@@ -90,6 +94,10 @@ func decrypt(L *lua.LState) int {
 	cipher, err := aes.NewCipher([]byte(key))
 	if err != nil {
 		util.Raise(L, fmt.Errorf("aes decrypt: %w", err))
+		return 0
+	}
+	if len(value) != aes.BlockSize {
+		util.Raise(L, fmt.Errorf("aes decrypt: value must be exactly %d bytes, got %d", aes.BlockSize, len(value)))
 		return 0
 	}
 

@@ -286,17 +286,17 @@ local crypto = {}
 local aes = {}
 
 
---- Encrypts a string using AES.
---- @param key string The key to use for encryption.
---- @param value string The string to encrypt.
---- @return string encrypted The encrypted string.
+--- Encrypts a single 16-byte block with AES (raw block cipher, no mode or padding). Raises an error unless value is exactly 16 bytes.
+--- @param key string The key to use for encryption: 16, 24 or 32 bytes (AES-128, AES-192 or AES-256).
+--- @param value string The 16-byte block to encrypt.
+--- @return string encrypted The encrypted 16-byte block.
 function aes.encrypt(key, value)
 end
 
---- Decrypts a string using AES.
---- @param key string The key to use for decryption.
---- @param value string The string to decrypt.
---- @return string decrypted The decrypted string.
+--- Decrypts a single 16-byte block with AES (raw block cipher, no mode or padding). Raises an error unless value is exactly 16 bytes.
+--- @param key string The key to use for decryption: 16, 24 or 32 bytes (AES-128, AES-192 or AES-256).
+--- @param value string The 16-byte block to decrypt.
+--- @return string decrypted The decrypted 16-byte block.
 function aes.decrypt(key, value)
 end
 
