@@ -86,7 +86,9 @@ func newNewBrowser(track func(io.Closer), log func(string, ...any), status func(
 }
 
 // launch starts a browser like rod does, with its download logged instead of printed on
-// stdout, which must stay clean (e.g. --json).
+// stdout, which must stay clean (e.g. --json). It and cleanup are duplicated in
+// mangoprovider's scraper/headless/rod (no shared module but libmangal, which shouldn't
+// pull rod): keep both in sync.
 func launch(ctx context.Context, log func(string, ...any), status func(context.Context, string)) (*launcher.Launcher, string, error) {
 	// leakless (kills chromium if mangal dies) only on linux: antiviruses flag its
 	// binary on windows, same as mangoprovider did
