@@ -39,14 +39,16 @@ func newState(options Options, limiter *luahttp.Limiter, store gokv.Store, log *
 	}
 
 	lib.Preload(state, &lib.Options{
-		HTTPClient:  options.HTTPClient,
-		RateLimiter: limiter,
-		CacheStore:  store,
-		UserAgent:   options.UserAgent,
-		Log:         log.Log,
-		Status:      func(ctx context.Context, message string) { log.Status(ctx, "%s", message) },
-		Track:       resources.track,
-		Filter:      options.Filter,
+		HTTPClient:   options.HTTPClient,
+		RateLimiter:  limiter,
+		CacheStore:   store,
+		UserAgent:    options.UserAgent,
+		Log:          log.Log,
+		Status:       func(ctx context.Context, message string) { log.Status(ctx, "%s", message) },
+		Track:        resources.track,
+		Filter:       options.Filter,
+		FlareSolverr: options.FlareSolverr,
+		Debug:        options.Debug,
 	})
 
 	pkg := state.GetGlobal("package").(*lua.LTable)

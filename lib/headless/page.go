@@ -2,8 +2,11 @@ package headless
 
 import (
 	"fmt"
+	"net/url"
+	"time"
 
 	"github.com/go-rod/rod"
+	"github.com/luevano/libmangal/netutil"
 	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -26,14 +29,36 @@ func pageElement(state *lua.LState) int {
 	return 1
 }
 
-func pageNavigate(state *lua.LState) int {
-	page := util.Check[*rod.Page](state, 1)
-	URL := state.CheckString(2)
+func pageNavigate(debug func(string, ...any)) lua.LGFunction {
+	return func(state *lua.LState) int {
+		page := util.Check[*rod.Page](state, 1)
+		URL := state.CheckString(2)
 
-	if err := page.Context(state.Context()).Navigate(URL); err != nil {
-		util.Raise(state, fmt.Errorf("headless navigate %s: %w", URL, err))
+		start := time.Now()
+		err := page.Context(state.Context()).Navigate(URL)
+		logLoad(debug, URL, start, err)
+		if err != nil {
+			util.Raise(state, fmt.Errorf("headless navigate %s: %w", URL, err))
+		}
+		return 0
 	}
-	return 0
+}
+
+// logLoad logs a page load like the app logs its requests, "headless" instead of a status.
+func logLoad(debug func(string, ...any), rawURL string, start time.Time, err error) {
+	if debug == nil {
+		return
+	}
+	target := rawURL
+	if u, parseErr := url.Parse(rawURL); parseErr == nil {
+		target = netutil.RedactURL(u).String()
+	}
+	took := time.Since(start).Round(time.Millisecond)
+	if err != nil {
+		debug("GET %s headless: %s (%s)", target, err, took)
+	} else {
+		debug("GET %s headless %s", target, took)
+	}
 }
 
 func pageHTML(state *lua.LState) int {

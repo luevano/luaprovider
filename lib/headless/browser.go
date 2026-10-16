@@ -124,24 +124,28 @@ func (l logger) Println(vs ...any) {
 	l("%s", strings.TrimSpace(fmt.Sprintln(vs...)))
 }
 
-func browserPage(state *lua.LState) int {
-	browser := util.Check[*browser](state, 1)
-	URL := state.CheckString(2)
+func browserPage(debug func(string, ...any)) lua.LGFunction {
+	return func(state *lua.LState) int {
+		browser := util.Check[*browser](state, 1)
+		URL := state.CheckString(2)
 
-	// the browser can outlive a call, each operation uses the context of the current one
-	page, err := browser.Context(state.Context()).Page(proto.TargetCreateTarget{URL: URL})
-	if err != nil {
-		util.Raise(state, fmt.Errorf("headless page %s: %w", URL, err))
-		return 0
-	}
-	if err := page.WaitLoad(); err != nil {
-		page.Close()
-		util.Raise(state, fmt.Errorf("headless page %s: %w", URL, err))
-		return 0
-	}
+		start := time.Now()
+		// the browser can outlive a call, each operation uses the context of the current one
+		page, err := browser.Context(state.Context()).Page(proto.TargetCreateTarget{URL: URL})
+		if err == nil {
+			if err = page.WaitLoad(); err != nil {
+				page.Close()
+			}
+		}
+		logLoad(debug, URL, start, err)
+		if err != nil {
+			util.Raise(state, fmt.Errorf("headless page %s: %w", URL, err))
+			return 0
+		}
 
-	util.Push(state, page, pageTypeName)
-	return 1
+		util.Push(state, page, pageTypeName)
+		return 1
+	}
 }
 
 func browserClose(state *lua.LState) int {

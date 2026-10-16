@@ -1416,6 +1416,13 @@ end
 function http_request:content_length(length)
 end
 
+--- Send the request through FlareSolverr (for sites behind a Cloudflare challenge), raises if the app has no FlareSolverr configured (see http.has_flaresolverr).
+--- Only GET and POST (the body as form data). FlareSolverr doesn't pass the request's headers or cookies, the body is what the browser shows (json comes inside a <pre>).
+--- It's slow (seconds a request): use it only for the sites that need it.
+--- @return http_request request The same request
+function http_request:flaresolverr()
+end
+
 --- Perform request
 --- @return http_response response Response
 function http_request:send()
@@ -1466,6 +1473,11 @@ end
 --- @param match string? Host and optional path prefix the limit applies to
 --- @param burst number? Requests that can go at once, 1 by default
 function http.rate_limit(permits, seconds, match, burst)
+end
+
+--- Whether the app configured FlareSolverr, needed by request:flaresolverr()
+--- @return boolean available FlareSolverr is configured
+function http.has_flaresolverr()
 end
 
 --- Create a new HTTP request

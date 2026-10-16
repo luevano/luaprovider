@@ -1,6 +1,7 @@
 package http
 
 import (
+	"io"
 	"net/http"
 
 	luadoc "github.com/luevano/gopher-luadoc"
@@ -17,9 +18,24 @@ type Options struct {
 	UserAgent  string
 	// Limiter gets the limits of rate_limit.
 	Limiter *Limiter
+	// FlareSolverr makes the transport of request:flaresolverr() (a FlareSolverr session),
+	// called once, on the first such request; nil if FlareSolverr isn't configured. A
+	// transport that is an io.Closer is passed to Track.
+	FlareSolverr func() http.RoundTripper
+	// Track: Resources to close with the provider.
+	Track func(io.Closer)
+	// Debug logs cache hits and FlareSolverr requests (the app's HTTPClient logs the rest),
+	// nothing if nil.
+	Debug func(format string, a ...any)
 }
 
 func Lib(options Options) *luadoc.Lib {
+	flare := &flareSolverr{
+		newTransport: options.FlareSolverr,
+		limiter:      options.Limiter,
+		track:        options.Track,
+		debug:        options.Debug,
+	}
 	classRequest := &luadoc.Class{
 		Name:        requestTypeName,
 		Description: "HTTP Request",
@@ -98,10 +114,24 @@ func Lib(options Options) *luadoc.Lib {
 				},
 			},
 			{
+				Name: "flaresolverr",
+				Description: `Send the request through FlareSolverr (for sites behind a Cloudflare challenge), raises if the app has no FlareSolverr configured (see http.has_flaresolverr).
+Only GET and POST (the body as form data). FlareSolverr doesn't pass the request's headers or cookies, the body is what the browser shows (json comes inside a <pre>).
+It's slow (seconds a request): use it only for the sites that need it.`,
+				Value: requestFlareSolverr(flare),
+				Returns: []*luadoc.Param{
+					{
+						Name:        "request",
+						Description: "The same request",
+						Type:        requestTypeName,
+					},
+				},
+			},
+			{
 				Name:        "send",
 				Description: "Perform request",
 				Value: func(L *lua.LState) int {
-					return requestSend(L, options.HTTPClient, options.CacheStore)
+					return requestSend(L, options.HTTPClient, options.CacheStore, flare, options.Debug)
 				},
 				Returns: []*luadoc.Param{
 					{
@@ -287,6 +317,18 @@ The burst is how many requests can go at once, 1 by default: a bigger one lets m
 						Description: "Requests that can go at once, 1 by default",
 						Type:        luadoc.Number,
 						Optional:    true,
+					},
+				},
+			},
+			{
+				Name:        "has_flaresolverr",
+				Description: "Whether the app configured FlareSolverr, needed by request:flaresolverr()",
+				Value:       hasFlareSolverr(flare),
+				Returns: []*luadoc.Param{
+					{
+						Name:        "available",
+						Description: "FlareSolverr is configured",
+						Type:        luadoc.Boolean,
 					},
 				},
 			},

@@ -41,6 +41,16 @@ type Options struct {
 	// RateLimits of the provider's requests (e.g. from its manifest), on top of the ones the
 	// script sets with sdk.http.rate_limit. Page images are limited too.
 	RateLimits []luahttp.RateLimit
+
+	// FlareSolverr makes the transport scripts' request:flaresolverr() goes through, e.g.
+	// mangoprovider's flaresolverr.NewTransportClient(url, client). Called once per provider
+	// load, on the first such request; a transport that is an io.Closer (its session) is
+	// closed with the provider. Nil: FlareSolverr isn't configured, those requests raise.
+	FlareSolverr func() http.RoundTripper
+
+	// Debug logs what doesn't go through HTTPClient: cache hits, FlareSolverr requests and
+	// headless page loads, in netutil.LoggingTransport's format. Nothing if nil.
+	Debug func(format string, a ...any)
 }
 
 // FilterOptions are the same as mangoprovider's.

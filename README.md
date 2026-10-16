@@ -111,6 +111,14 @@ If the site documents a rate limit, set it when the script loads with
 `sdk.http.rate_limit(permits, seconds[, match[, burst]])`, e.g. `sdk.http.rate_limit(1, 2, "site.com")`
 for one request every 2 seconds to `site.com`. Requests (page images too) wait for every limit they match.
 
+For a site behind a Cloudflare challenge, `request:flaresolverr()` sends that request through
+[FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) when the app has one configured
+(`sdk.http.has_flaresolverr()`, else it raises), e.g.
+`sdk.http.request("GET", url):flaresolverr():send()`. Only GET and POST; FlareSolverr doesn't pass
+the request's headers or cookies, and json comes back inside the page's `<pre>`. It's slow, so use
+it only where needed. Apps set `Options.FlareSolverr` to a function making the transport (e.g.
+mangoprovider's `flaresolverr.NewTransportClient`); one session per loaded provider, closed with it.
+
 ---
 
 The scripts can load sdk with

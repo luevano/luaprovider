@@ -11,6 +11,7 @@ import (
 	"net/http/httputil"
 	"strings"
 
+	"github.com/luevano/libmangal/netutil"
 	"github.com/luevano/luaprovider/util"
 	"github.com/philippgille/gokv"
 	lua "github.com/yuin/gopher-lua"
@@ -91,15 +92,21 @@ func requestContentLength(L *lua.LState) int {
 	return 1
 }
 
-func requestSend(L *lua.LState, client *http.Client, store gokv.Store) int {
+func requestSend(L *lua.LState, client *http.Client, store gokv.Store, flare *flareSolverr, debug func(string, ...any)) int {
 	request := util.Check[*http.Request](L, 1)
 
 	key, cacheable := cacheKey(request)
 	if cacheable {
 		if response, found := cachedResponse(store, key, request); found {
+			if debug != nil {
+				debug("%s %s cached", request.Method, netutil.RedactURL(request.URL))
+			}
 			util.Push(L, response, responseTypeName)
 			return 1
 		}
+	}
+	if viaFlareSolverr(request) {
+		client = flare.get()
 	}
 
 	response, err := client.Do(request)

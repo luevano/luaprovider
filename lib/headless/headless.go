@@ -9,8 +9,9 @@ import (
 
 const libName = "headless"
 
-// Lib: Browsers are passed to track, to be closed with the provider.
-func Lib(track func(io.Closer), log func(string, ...any), status func(context.Context, string)) *luadoc.Lib {
+// Lib: Browsers are passed to track, to be closed with the provider. Page loads are logged
+// with debug if not nil.
+func Lib(track func(io.Closer), log func(string, ...any), status func(context.Context, string), debug func(string, ...any)) *luadoc.Lib {
 	classBrowser := &luadoc.Class{
 		Name:        browserTypeName,
 		Description: "",
@@ -23,7 +24,7 @@ func Lib(track func(io.Closer), log func(string, ...any), status func(context.Co
 			{
 				Name:        "page",
 				Description: "Visit the page",
-				Value:       browserPage,
+				Value:       browserPage(debug),
 				Params: []*luadoc.Param{
 					{
 						Name:        "url",
@@ -66,7 +67,7 @@ func Lib(track func(io.Closer), log func(string, ...any), status func(context.Co
 			{
 				Name:        "navigate",
 				Description: "",
-				Value:       pageNavigate,
+				Value:       pageNavigate(debug),
 				Params: []*luadoc.Param{
 					{
 						Name:        "url",

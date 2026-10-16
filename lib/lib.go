@@ -43,6 +43,13 @@ type Options struct {
 	Track func(io.Closer)
 	// Filter: The user's filters, read by scripts from the options library.
 	Filter optionsLib.Filter
+	// FlareSolverr makes the transport of the http library's request:flaresolverr() (one
+	// FlareSolverr session, closed through Track if it's an io.Closer), called on the first
+	// such request; nil if FlareSolverr isn't configured.
+	FlareSolverr func() http.RoundTripper
+	// Debug logs what doesn't go through HTTPClient (cache hits, FlareSolverr requests,
+	// headless page loads), nothing if nil.
+	Debug func(format string, a ...any)
 }
 
 func DefaultOptions() *Options {
@@ -76,12 +83,15 @@ func Lib(L *lua.LState, options *Options) *luadoc.Lib {
 			timeLib.Lib(),
 			urls.Lib(),
 			encoding.Lib(L),
-			headless.Lib(options.Track, options.Log, options.Status),
+			headless.Lib(options.Track, options.Log, options.Status, options.Debug),
 			httpLib.Lib(httpLib.Options{
-				HTTPClient: options.RateLimiter.Client(options.HTTPClient),
-				CacheStore: options.CacheStore,
-				UserAgent:  options.UserAgent,
-				Limiter:    options.RateLimiter,
+				HTTPClient:   options.RateLimiter.Client(options.HTTPClient),
+				CacheStore:   options.CacheStore,
+				UserAgent:    options.UserAgent,
+				Limiter:      options.RateLimiter,
+				FlareSolverr: options.FlareSolverr,
+				Track:        options.Track,
+				Debug:        options.Debug,
 			}),
 			log.Lib(options.Log, options.Status),
 			optionsLib.Lib(options.Filter),

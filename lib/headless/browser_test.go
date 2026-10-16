@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,7 +26,7 @@ func TestBrowserCloseCleansUp(t *testing.T) {
 	var tracked []io.Closer
 	L := lua.NewState()
 	defer L.Close()
-	L.SetGlobal("headless", Lib(func(c io.Closer) { tracked = append(tracked, c) }, t.Logf, func(context.Context, string) {}).Value(L))
+	L.SetGlobal("headless", Lib(func(c io.Closer) { tracked = append(tracked, c) }, t.Logf, func(context.Context, string) {}, nil).Value(L))
 	L.SetContext(context.Background())
 	if err := L.DoString(`browser = headless.browser()`); err != nil {
 		t.Fatal(err)
@@ -77,7 +78,9 @@ func TestPages(t *testing.T) {
 			c.Close()
 		}
 	}()
-	L.SetGlobal("headless", Lib(func(c io.Closer) { tracked = append(tracked, c) }, t.Logf, func(context.Context, string) {}).Value(L))
+	var loads []string
+	debug := func(format string, a ...any) { loads = append(loads, fmt.Sprintf(format, a...)) }
+	L.SetGlobal("headless", Lib(func(c io.Closer) { tracked = append(tracked, c) }, t.Logf, func(context.Context, string) {}, debug).Value(L))
 	L.SetContext(context.Background())
 	err := L.DoString(fmt.Sprintf(`
 browser = headless.browser()
@@ -92,6 +95,9 @@ page:close()
 `, server.URL))
 	if err != nil {
 		t.Fatal(err)
+	}
+	if len(loads) != 2 || !strings.HasPrefix(loads[0], "GET "+server.URL+" headless ") || !strings.HasPrefix(loads[1], "GET "+server.URL+"/other headless ") {
+		t.Errorf("wanted the page and navigate loads logged, got %q", loads)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
