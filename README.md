@@ -20,7 +20,8 @@ It uses [native go implementation of the Lua interpreter](https://github.com/yui
 > SDK libraries. Scripts get no `io`/`os` and `require` only loads files from the provider's own
 > package paths, but only install providers you trust. Requests aren't limited to the internet:
 > a script can also reach `localhost` and your LAN (a router, a FlareSolverr, other local
-> services).
+> services) unless the app guards the `HTTPClient` it passes (mangal does, see its
+> `providers.allow_private_addresses`). Headless browsers aren't covered by that.
 
 ## Features
 

@@ -21,7 +21,9 @@ var _ lm.ProviderLoader = (*loader)(nil)
 
 // Options are the general luaprovider options.
 type Options struct {
-	// HTTPClient HTTP client to use for all requests.
+	// HTTPClient HTTP client to use for all requests. It's used as is: keeping a script's
+	// requests off private addresses is the app's job (mangal guards it). Headless browsers
+	// don't go through it.
 	HTTPClient *http.Client
 
 	// UserAgent to use for all HTTP requests.
