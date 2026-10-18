@@ -27,7 +27,7 @@ func newState(options Options, limiter *luahttp.Limiter, store gokv.Store, log *
 		lua.OpenMath,
 		lua.OpenPackage,
 		lua.OpenCoroutine,
-		lua.OpenChannel,
+		openChannel,
 	}
 
 	state := lua.NewState(lua.Options{
@@ -61,6 +61,49 @@ func newState(options Options, limiter *luahttp.Limiter, store gokv.Store, log *
 
 	sandbox(state, options.PackagePaths, log)
 	return state
+}
+
+// maxChannelBuffer caps channel.make(n), a huge n would allocate it all at once.
+const maxChannelBuffer = 1 << 16
+
+// openChannel is gopher-lua's channel lib with a send that stops when the call is cancelled
+// (gopher-lua's blocks forever, wedging the provider) and a capped buffer.
+func openChannel(L *lua.LState) int {
+	n := lua.OpenChannel(L)
+	mod := L.Get(-1).(*lua.LTable)
+	makeChannel := mod.RawGetString("make").(*lua.LFunction)
+	mod.RawSetString("make", L.NewFunction(func(L *lua.LState) int {
+		if n := L.OptInt(1, 0); n < 0 || n > maxChannelBuffer {
+			L.ArgError(1, fmt.Sprintf("buffer must be between 0 and %d, got %d", maxChannelBuffer, n))
+		}
+		return makeChannel.GFunction(L)
+	}))
+	mt := L.GetMetatable(lua.LChannel(nil)).(*lua.LTable)
+	mt.RawSetString("send", L.NewFunction(channelSend))
+	return n
+}
+
+func channelSend(L *lua.LState) int {
+	ch := L.CheckChannel(1)
+	v := L.CheckAny(2)
+	switch v := v.(type) {
+	case *lua.LFunction, *lua.LUserData, *lua.LState:
+		L.ArgError(2, "can not send a function, userdata, thread or table that has a metatable")
+	case *lua.LTable:
+		if v.Metatable != lua.LNil {
+			L.ArgError(2, "can not send a function, userdata, thread or table that has a metatable")
+		}
+	}
+	ctx := L.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	select {
+	case ch <- v:
+	case <-ctx.Done():
+		util.Raise(L, ctx.Err())
+	}
+	return 0
 }
 
 // sandbox keeps scripts away from the file system and stdout: no io/os, nothing that loads
