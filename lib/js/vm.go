@@ -107,9 +107,10 @@ func checkPlain(lvalue lua.LValue, seen map[*lua.LTable]bool) error {
 		return errors.New("userdata can't be passed to javascript")
 	case *lua.LTable:
 		if seen[v] {
-			return nil
+			return errors.New("a table inside itself can't be passed to javascript")
 		}
 		seen[v] = true
+		defer delete(seen, v)
 		var err error
 		v.ForEach(func(_, value lua.LValue) {
 			if err == nil {
