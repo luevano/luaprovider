@@ -264,6 +264,16 @@ func selectionSlice(L *lua.LState) int {
 	selection := util.Check[*goquery.Selection](L, 1)
 	start := L.CheckInt(2)
 	end := L.CheckInt(3)
+	// goquery's negative indexes count from the end, past either end it panics
+	n := selection.Length()
+	if start < 0 {
+		start += n
+	}
+	if end < 0 {
+		end += n
+	}
+	start = min(max(start, 0), n)
+	end = min(max(end, start), n)
 	util.Push(L, selection.Slice(start, end), selectionTypeName)
 	return 1
 }
