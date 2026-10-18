@@ -1,6 +1,7 @@
 package strings
 
 import (
+	"fmt"
 	"strings"
 
 	luadoc "github.com/luevano/gopher-luadoc"
@@ -814,9 +815,18 @@ func lastIndexAny(L *lua.LState) int {
 	return 1
 }
 
+// maxDuplicate caps duplicate's result, strings.Repeat panics or allocates it all.
+const maxDuplicate = 100 << 20
+
 func duplicate(L *lua.LState) int {
 	s := L.CheckString(1)
 	count := L.CheckInt(2)
+	if count < 0 {
+		L.ArgError(2, "must not be negative")
+	}
+	if count > 0 && len(s) > maxDuplicate/count {
+		L.ArgError(2, fmt.Sprintf("result over %d bytes", maxDuplicate))
+	}
 
 	L.Push(lua.LString(strings.Repeat(s, count)))
 	return 1

@@ -45,3 +45,21 @@ assert(strings.title("") == "", "empty")
 		t.Fatal(err)
 	}
 }
+
+func TestDuplicate(t *testing.T) {
+	L := lua.NewState()
+	defer L.Close()
+	lib.Preload(L, lib.DefaultOptions())
+	L.SetContext(context.Background())
+
+	script := `
+local strings = require("sdk").strings
+assert(strings.duplicate("ab", 3) == "ababab", "repeat")
+assert(strings.duplicate("ab", 0) == "", "zero")
+assert(not pcall(strings.duplicate, "ab", -1), "negative")
+assert(not pcall(strings.duplicate, "ab", 2^31), "huge")
+`
+	if err := L.DoString(script); err != nil {
+		t.Fatal(err)
+	}
+}
