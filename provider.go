@@ -211,12 +211,12 @@ func loadItems[Input intoLValue, Output any](
 	for i, value := range values {
 		table, ok := value.(*lua.LTable)
 		if !ok {
-			return nil, fmt.Errorf("item %d: expected a table, got %s", i, value.Type())
+			return nil, fmt.Errorf("item %d: expected a table, got %s", i+1, value.Type())
 		}
 
 		item, err := convert(i, table)
 		if err != nil {
-			return nil, fmt.Errorf("item %d: %w", i, err)
+			return nil, fmt.Errorf("item %d: %w", i+1, err)
 		}
 		items[i] = item
 	}
