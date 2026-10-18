@@ -28,10 +28,13 @@ func TestBrowserCloseCleansUp(t *testing.T) {
 	defer L.Close()
 	L.SetGlobal("headless", Lib(func(c io.Closer) { tracked = append(tracked, c) }, t.Logf, func(context.Context, string) {}, nil).Value(L))
 	L.SetContext(context.Background())
-	if err := L.DoString(`browser = headless.browser()`); err != nil {
+	if err := L.DoString(`browser = headless.browser() again = headless.browser()`); err != nil {
 		t.Fatal(err)
 	}
 	b := L.GetGlobal("browser").(*lua.LUserData).Value.(*browser)
+	if again := L.GetGlobal("again").(*lua.LUserData).Value.(*browser); again != b {
+		t.Error("a second headless.browser() should return the live browser")
+	}
 	dir := b.launcher.Get(flags.UserDataDir)
 	if _, err := os.Stat(dir); err != nil {
 		t.Fatalf("user data dir: %v", err)
@@ -50,6 +53,14 @@ func TestBrowserCloseCleansUp(t *testing.T) {
 	if err := tracked[0].Close(); err != nil {
 		t.Errorf("second close: %v", err)
 	}
+
+	if err := L.DoString(`after = headless.browser()`); err != nil {
+		t.Fatal(err)
+	}
+	if after := L.GetGlobal("after").(*lua.LUserData).Value.(*browser); after == b || len(tracked) != 2 {
+		t.Error("after close, headless.browser() should start a new browser")
+	}
+	tracked[1].Close()
 }
 
 func TestPages(t *testing.T) {
@@ -107,5 +118,34 @@ page:close()
 	err = util.GoError(L.DoString(fmt.Sprintf(`browser:page(%q)`, server.URL+"/slow")))
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("cancelled page: wanted context.Canceled in the chain, got %v", err)
+	}
+}
+
+func TestCrashedBrowserIsReplaced(t *testing.T) {
+	if testing.Short() || launcher.NewBrowser().Validate() != nil {
+		t.Skip("needs rod's chromium already downloaded")
+	}
+
+	var tracked []io.Closer
+	L := lua.NewState()
+	defer L.Close()
+	defer func() {
+		for _, c := range tracked {
+			_ = c.Close()
+		}
+	}()
+	L.SetGlobal("headless", Lib(func(c io.Closer) { tracked = append(tracked, c) }, t.Logf, func(context.Context, string) {}, nil).Value(L))
+	L.SetContext(context.Background())
+	if err := L.DoString(`browser = headless.browser()`); err != nil {
+		t.Fatal(err)
+	}
+	b := L.GetGlobal("browser").(*lua.LUserData).Value.(*browser)
+	b.launcher.Kill()
+
+	if err := L.DoString(`again = headless.browser()`); err != nil {
+		t.Fatal(err)
+	}
+	if again := L.GetGlobal("again").(*lua.LUserData).Value.(*browser); again == b || len(tracked) != 2 {
+		t.Error("a crashed browser should be replaced by a new one")
 	}
 }

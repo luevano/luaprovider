@@ -62,9 +62,24 @@ func cleanup(l *launcher.Launcher) {
 	}
 }
 
+// sharedBrowser is the provider's browser, each one is a whole chromium. A provider's lua
+// state runs one call at a time, no lock needed.
+type sharedBrowser struct {
+	live *browser
+}
+
 // newNewBrowser: Browsers are tracked so they're closed with the provider.
-func newNewBrowser(track func(io.Closer), log func(string, ...any), status func(context.Context, string)) lua.LGFunction {
+func newNewBrowser(shared *sharedBrowser, track func(io.Closer), log func(string, ...any), status func(context.Context, string)) lua.LGFunction {
 	return func(state *lua.LState) int {
+		if shared.live != nil {
+			// a crashed chromium is replaced, not handed out again
+			if _, err := shared.live.Context(state.Context()).Timeout(5 * time.Second).Version(); err == nil {
+				util.Push(state, shared.live, browserTypeName)
+				return 1
+			}
+			_ = shared.live.Close()
+			shared.live = nil
+		}
 		l, u, err := launch(state.Context(), log, status)
 		if err != nil {
 			util.Raise(state, fmt.Errorf("headless browser: %w", err))
@@ -79,6 +94,7 @@ func newNewBrowser(track func(io.Closer), log func(string, ...any), status func(
 			return 0
 		}
 		track(b)
+		shared.live = b
 
 		util.Push(state, b, browserTypeName)
 		return 1
@@ -152,10 +168,15 @@ func browserPage(debug func(string, ...any)) lua.LGFunction {
 	}
 }
 
-func browserClose(state *lua.LState) int {
-	browser := util.Check[*browser](state, 1)
-	if err := browser.Close(); err != nil {
-		util.Raise(state, fmt.Errorf("headless browser close: %w", err))
+func browserClose(shared *sharedBrowser) lua.LGFunction {
+	return func(state *lua.LState) int {
+		browser := util.Check[*browser](state, 1)
+		if shared.live == browser {
+			shared.live = nil
+		}
+		if err := browser.Close(); err != nil {
+			util.Raise(state, fmt.Errorf("headless browser close: %w", err))
+		}
+		return 0
 	}
-	return 0
 }

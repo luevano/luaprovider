@@ -12,14 +12,15 @@ const libName = "headless"
 // Lib: Browsers are passed to track, to be closed with the provider. Page loads are logged
 // with debug if not nil.
 func Lib(track func(io.Closer), log func(string, ...any), status func(context.Context, string), debug func(string, ...any)) *luadoc.Lib {
+	shared := &sharedBrowser{}
 	classBrowser := &luadoc.Class{
 		Name:        browserTypeName,
 		Description: "",
 		Methods: []*luadoc.Method{
 			{
 				Name:        "close",
-				Description: "Close the browser, else it's closed with the provider",
-				Value:       browserClose,
+				Description: "Close the browser, else it's closed with the provider. The next headless.browser() starts a new one",
+				Value:       browserClose(shared),
 			},
 			{
 				Name:        "page",
@@ -140,8 +141,8 @@ func Lib(track func(io.Closer), log func(string, ...any), status func(context.Co
 		Funcs: []*luadoc.Func{
 			{
 				Name:        "browser",
-				Description: "Creates a new headless browser",
-				Value:       newNewBrowser(track, log, status),
+				Description: "The provider's headless browser, started on the first call and shared until it's closed",
+				Value:       newNewBrowser(shared, track, log, status),
 				Returns: []*luadoc.Param{
 					{
 						Name:        "browser",

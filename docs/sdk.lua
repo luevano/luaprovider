@@ -1318,7 +1318,7 @@ local headless = {}
 local headless_browser = {}
 
 
---- Close the browser, else it's closed with the provider
+--- Close the browser, else it's closed with the provider. The next headless.browser() starts a new one
 function headless_browser:close()
 end
 
@@ -1372,7 +1372,7 @@ end
 function headless_element:input(text)
 end
 
---- Creates a new headless browser
+--- The provider's headless browser, started on the first call and shared until it's closed
 --- @return headless_browser browser headless browser instance
 function headless.browser()
 end
