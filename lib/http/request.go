@@ -3,6 +3,7 @@ package http
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -94,6 +95,20 @@ func requestContentLength(L *lua.LState) int {
 
 func requestSend(L *lua.LState, client *http.Client, store gokv.Store, flare *flareSolverr, debug func(string, ...any)) int {
 	request := util.Check[*http.Request](L, 1)
+	// the request can be reused in a later call, it takes the ctx of the current one
+	ctx := L.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if via := request.Context().Value(flareSolverrKey{}); via != nil {
+		ctx = context.WithValue(ctx, flareSolverrKey{}, via)
+	}
+	request = request.WithContext(ctx)
+	if request.GetBody != nil {
+		if body, err := request.GetBody(); err == nil {
+			request.Body = body
+		}
+	}
 
 	key, cacheable := cacheKey(request)
 	if cacheable {

@@ -74,3 +74,30 @@ func TestBodyReadErrorKeepsItsChain(t *testing.T) {
 		t.Fatalf("wanted io.ErrUnexpectedEOF in the chain, got %v", err)
 	}
 }
+
+func TestRequestReusedInALaterCall(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		w.Write(body)
+	}))
+	defer server.Close()
+
+	L := lua.NewState()
+	defer L.Close()
+	lib.Preload(L, lib.DefaultOptions())
+	ctx, cancel := context.WithCancel(context.Background())
+	L.SetContext(ctx)
+	if err := L.DoString(fmt.Sprintf(`request = require("sdk").http.request("POST", %q, "data")`, server.URL)); err != nil {
+		t.Fatal(err)
+	}
+	cancel()
+
+	L.SetContext(context.Background())
+	script := `
+assert(request:send():body() == "data", "first send")
+assert(request:send():body() == "data", "the body is sent again")
+`
+	if err := L.DoString(script); err != nil {
+		t.Fatal(err)
+	}
+}
