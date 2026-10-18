@@ -172,7 +172,7 @@ func (j jsonValue) MarshalJSON() (data []byte, err error) {
 
 // decode converts the JSON encoded data to Lua values.
 func decode(L *lua.LState, data []byte) (lua.LValue, error) {
-	var value interface{}
+	var value any
 	err := json.Unmarshal(data, &value)
 	if err != nil {
 		return nil, err

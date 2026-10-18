@@ -161,15 +161,13 @@ end
 }
 
 func TestLibErrorsKeepTheirChain(t *testing.T) {
-	var syntaxErr *json.SyntaxError
 	err := util.GoError(run(t, `require("sdk").encoding.json.decode("{")`))
-	if !errors.As(err, &syntaxErr) {
+	if _, ok := errors.AsType[*json.SyntaxError](err); !ok {
 		t.Errorf("json decode: wanted a *json.SyntaxError in the chain, got %v", err)
 	}
 
-	var urlErr *url.Error
 	err = util.GoError(run(t, `require("sdk").urls.parse(":bad")`))
-	if !errors.As(err, &urlErr) {
+	if _, ok := errors.AsType[*url.Error](err); !ok {
 		t.Errorf("urls parse: wanted a *url.Error in the chain, got %v", err)
 	}
 

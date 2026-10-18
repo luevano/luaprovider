@@ -39,16 +39,9 @@ func runInterruptible(ctx context.Context, vm *otto.Otto, script string) (value 
 		return vm.Run(script)
 	}
 
-	done := make(chan struct{})
-	defer close(done)
 	vm.Interrupt = make(chan func(), 1)
-	go func() {
-		select {
-		case <-ctx.Done():
-			vm.Interrupt <- func() { panic(errInterrupted) }
-		case <-done:
-		}
-	}()
+	stop := context.AfterFunc(ctx, func() { vm.Interrupt <- func() { panic(errInterrupted) } })
+	defer stop()
 
 	// otto stops the script by panicking with what the interrupt panics with
 	defer func() {

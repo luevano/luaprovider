@@ -552,8 +552,7 @@ func (p *provider) getPageImage(
 		StatusError: luahttp.NewError,
 	})
 	// the same error as the scripts' requests
-	var rateLimit *netutil.RateLimitError
-	if errors.As(err, &rateLimit) {
+	if rateLimit, ok := errors.AsType[*netutil.RateLimitError](err); ok {
 		return nil, &RateLimitError{Method: http.MethodGet, URL: page.URL, RetryAfter: rateLimit.RetryAfter}
 	}
 	return image, err

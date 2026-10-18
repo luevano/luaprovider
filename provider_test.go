@@ -91,7 +91,7 @@ func TestManyCallsDontGrowTheStack(t *testing.T) {
 	p := loadTestProvider(t, testScript)
 	before := p.state.GetTop()
 
-	for i := 0; i < 10000; i++ {
+	for i := range 10000 {
 		if _, err := p.SearchMangas(context.Background(), "x"); err != nil {
 			t.Fatalf("call %d: %v", i, err)
 		}
@@ -105,14 +105,12 @@ func TestConcurrentCalls(t *testing.T) {
 	p := loadTestProvider(t, testScript)
 
 	var wg sync.WaitGroup
-	for i := 0; i < 20; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range 20 {
+		wg.Go(func() {
 			if _, err := p.SearchMangas(context.Background(), "x"); err != nil {
 				t.Error(err)
 			}
-		}()
+		})
 	}
 	wg.Wait()
 }
