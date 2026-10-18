@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"reflect"
 	"slices"
+	"strconv"
 	"sync"
 	"time"
 
@@ -337,12 +339,12 @@ func (p *provider) VolumeChapters(
 	}
 
 	p.log.Log("fetching chapters for volume %s", v)
-	var last float32
+	unnumbered := map[int]bool{}
 	chapters, err := loadItems(
 		ctx,
 		p,
 		p.fnVolumeChapters,
-		func(_ int, table *lua.LTable) (mangadata.Chapter, error) {
+		func(i int, table *lua.LTable) (mangadata.Chapter, error) {
 			var chapter luaChapter
 			md, err := p.decode("chapter", table, &chapter)
 			if err != nil {
@@ -351,11 +353,7 @@ func (p *provider) VolumeChapters(
 			if chapter.Title == "" {
 				return nil, errors.New("missing title")
 			}
-			// chapters without a number (e.g. "Extra") go right after the previous one
-			if slices.Contains(md.Unset, "number") {
-				chapter.Number = nextExtraNumber(last)
-			}
-			last = chapter.Number
+			unnumbered[i] = slices.Contains(md.Unset, "number")
 
 			// gives the chapter access to its volume
 			table.RawSetString("volume", v.table)
@@ -368,6 +366,23 @@ func (p *provider) VolumeChapters(
 	)
 	if err != nil {
 		return nil, fmt.Errorf("%s: chapters of %q vol %s: %w", p.info.ID, v.manga, v, err)
+	}
+	// chapters without a number (e.g. "Extra") go right after the previous one, on a number
+	// no other chapter has
+	taken := map[int64]bool{}
+	for i, c := range chapters {
+		if !unnumbered[i] {
+			taken[scaledNumber(c.(*luaChapter).Number)] = true
+		}
+	}
+	var last float32
+	for i, c := range chapters {
+		chapter := c.(*luaChapter)
+		if unnumbered[i] {
+			chapter.Number = nextExtraNumber(last, taken)
+			taken[scaledNumber(chapter.Number)] = true
+		}
+		last = chapter.Number
 	}
 	if !p.options.Filter.ShowUnavailableChapters {
 		chapters = slices.DeleteFunc(chapters, func(c mangadata.Chapter) bool {
@@ -443,14 +458,54 @@ func (p *provider) parseDate(date string) metadata.Date {
 	return metadata.Date{Year: parsed.Year(), Month: int(parsed.Month()), Day: parsed.Day()}
 }
 
-// nextExtraNumber returns the number for a chapter without one that comes right after last,
-// e.g. an "Extra" after chapter 5 is 5.5, after 5.5 it's 5.6.
-func nextExtraNumber(last float32) float32 {
-	// avoids floating point precision issues https://stackoverflow.com/a/56300186
-	if last == float32(int(last)) {
-		return float32((float64(last*10) + 5) / 10)
+// numberScale: Chapter numbers are compared and stepped as integers in millionths, float32
+// sums drift (10.5+0.1 isn't 10.6).
+const numberScale = 1_000_000
+
+func scaledNumber(n float32) int64 {
+	f, _ := strconv.ParseFloat(strconv.FormatFloat(float64(n), 'f', -1, 32), 64)
+	return int64(math.Round(f * numberScale))
+}
+
+func unscaledNumber(n int64) float32 {
+	f, _ := strconv.ParseFloat(strconv.FormatFloat(float64(n)/numberScale, 'f', -1, 64), 32)
+	return float32(f)
+}
+
+// nextExtraNumber returns the number for a chapter without one that comes right after last
+// and isn't taken: after 5 it's 5.5, after 5.5 (or if 5.5 is taken) 5.6, ..., then 5.91,
+// 5.92, ... It stays below the next whole number a chapter has; when no chapter has 6, a long
+// run of extras goes on past it (6.5, 6.6, ...), never on the whole number itself.
+func nextExtraNumber(last float32, taken map[int64]bool) float32 {
+	// past a whole number only when no chapter has it
+	for base := scaledNumber(last); ; base = (base/numberScale + 1) * numberScale {
+		next := (base/numberScale + 1) * numberScale
+		n := base
+		if n%numberScale == 0 {
+			n += numberScale / 2
+			if n < next && !taken[n] {
+				return unscaledNumber(n)
+			}
+		}
+		for step := int64(numberScale / 10); step > 0; {
+			if n+step >= next {
+				step /= 10
+				continue
+			}
+			n += step
+			// float32 can't hold every millionth of big numbers (it'd round to a taken or whole one)
+			if !taken[n] && scaledNumber(unscaledNumber(n)) == n {
+				return unscaledNumber(n)
+			}
+		}
+		if taken[next] {
+			break
+		}
 	}
-	return float32((float64(last*10) + 1) / 10)
+	// shortcut: about 40 extras in a row fit before a whole number a chapter has (float32),
+	// later ones share the previous extra's number instead of taking a real chapter's; backlog
+	// "extra chapters"
+	return last
 }
 
 func (p *provider) GetPageImage(
