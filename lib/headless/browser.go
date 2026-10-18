@@ -128,6 +128,10 @@ func browserPage(debug func(string, ...any)) lua.LGFunction {
 	return func(state *lua.LState) int {
 		browser := util.Check[*browser](state, 1)
 		URL := state.CheckString(2)
+		if err := checkURL(URL); err != nil {
+			util.Raise(state, fmt.Errorf("headless page %s: %w", URL, err))
+			return 0
+		}
 
 		start := time.Now()
 		// the browser can outlive a call, each operation uses the context of the current one

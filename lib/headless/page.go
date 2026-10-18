@@ -33,6 +33,10 @@ func pageNavigate(debug func(string, ...any)) lua.LGFunction {
 	return func(state *lua.LState) int {
 		page := util.Check[*rod.Page](state, 1)
 		URL := state.CheckString(2)
+		if err := checkURL(URL); err != nil {
+			util.Raise(state, fmt.Errorf("headless navigate %s: %w", URL, err))
+			return 0
+		}
 
 		start := time.Now()
 		err := page.Context(state.Context()).Navigate(URL)
@@ -42,6 +46,18 @@ func pageNavigate(debug func(string, ...any)) lua.LGFunction {
 		}
 		return 0
 	}
+}
+
+// checkURL: scripts are untrusted, chromium would read local files (file://) for them.
+func checkURL(rawURL string) error {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return err
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return fmt.Errorf("scheme %q not allowed, only http and https", u.Scheme)
+	}
+	return nil
 }
 
 // logLoad logs a page load like the app logs its requests, "headless" instead of a status.
