@@ -76,3 +76,42 @@ end
 		t.Errorf("cancelled: %v, want context.Canceled", err)
 	}
 }
+
+func TestWaitingCallStopsOnCancel(t *testing.T) {
+	started := make(chan struct{})
+	var once sync.Once
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		once.Do(func() { close(started) })
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+
+	p := loadTestProvider(t, fmt.Sprintf(`
+local sdk = require("sdk")
+function SearchMangas(query)
+	sdk.http.request("GET", %q):send()
+	return {}
+end
+`, server.URL)+"function MangaVolumes"+strings.SplitN(testScript, "function MangaVolumes", 2)[1])
+
+	slow, cancelSlow := context.WithCancel(context.Background())
+	defer cancelSlow()
+	go p.SearchMangas(slow, "x")
+	<-started
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	errs := make(chan error, 1)
+	go func() {
+		_, err := p.SearchMangas(ctx, "x")
+		errs <- err
+	}()
+	select {
+	case err := <-errs:
+		if !errors.Is(err, context.DeadlineExceeded) {
+			t.Errorf("waiting call: %v, want context.DeadlineExceeded", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("a waiting call ignored its cancelled context")
+	}
+}

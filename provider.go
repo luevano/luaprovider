@@ -30,8 +30,9 @@ type provider struct {
 	log       *logger.ProviderLogger
 	resources *resources
 
-	// a lua state isn't safe for concurrent use, calls take turns
-	mu     sync.Mutex
+	// a lua state isn't safe for concurrent use, calls take turns (a 1-slot semaphore, so a
+	// waiting call can give up when its ctx is done)
+	sem    chan struct{}
 	state  *lua.LState
 	closed bool
 	// cancels the running call when closing, so Close doesn't wait for it
@@ -124,9 +125,13 @@ var ErrClosed = errors.New("provider closed")
 // lock takes the lua state for a call, with a ctx that's also cancelled by Close. Call unlock
 // when done.
 func (p *provider) lock(ctx context.Context) (_ context.Context, unlock func(), _ error) {
-	p.mu.Lock()
+	select {
+	case p.sem <- struct{}{}:
+	case <-ctx.Done():
+		return nil, nil, ctx.Err()
+	}
 	if p.closed {
-		p.mu.Unlock()
+		<-p.sem
 		return nil, nil, ErrClosed
 	}
 	ctx, cancel := context.WithCancel(ctx)
@@ -134,15 +139,15 @@ func (p *provider) lock(ctx context.Context) (_ context.Context, unlock func(), 
 	return ctx, func() {
 		stop()
 		cancel()
-		p.mu.Unlock()
+		<-p.sem
 	}, nil
 }
 
 func (p *provider) Close() error {
 	p.closeOnce.Do(func() {
 		p.stopCalls()
-		p.mu.Lock()
-		defer p.mu.Unlock()
+		p.sem <- struct{}{}
+		defer func() { <-p.sem }()
 		p.closed = true
 		p.closeErr = p.resources.close()
 		p.state.Close()

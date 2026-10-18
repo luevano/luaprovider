@@ -175,6 +175,7 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 		log:       log,
 		resources: res,
 		state:     state,
+		sem:       make(chan struct{}, 1),
 	}
 	p.closing, p.stopCalls = context.WithCancel(context.Background())
 	for name, fn := range map[string]**lua.LFunction{
