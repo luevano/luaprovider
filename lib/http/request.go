@@ -12,6 +12,7 @@ import (
 	"net/http/httputil"
 	"strings"
 
+	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/netutil"
 	"github.com/luevano/luaprovider/util"
 	"github.com/philippgille/gokv"
@@ -19,6 +20,9 @@ import (
 )
 
 const requestTypeName = libName + "_request"
+
+// maxBodySize: Larger response bodies are an error, they're held in memory (and cached).
+var maxBodySize = libmangal.DefaultMaxPageImageSize
 
 // newRequestNew: New requests get the user agent as default, scripts can still change it.
 func newRequestNew(userAgent string) lua.LGFunction {
@@ -130,10 +134,14 @@ func requestSend(L *lua.LState, client *http.Client, store gokv.Store, flare *fl
 		return 0
 	}
 	// read it all so the connection is released, body() returns it from memory
-	body, err := io.ReadAll(response.Body)
+	body, err := io.ReadAll(io.LimitReader(response.Body, maxBodySize+1))
 	response.Body.Close()
 	if err != nil {
 		util.Raise(L, fmt.Errorf("http send %s %s: read body: %w", request.Method, request.URL, err))
+		return 0
+	}
+	if int64(len(body)) > maxBodySize {
+		util.Raise(L, fmt.Errorf("http send %s %s: body over %d bytes", request.Method, request.URL, maxBodySize))
 		return 0
 	}
 	response.Body = io.NopCloser(bytes.NewReader(body))

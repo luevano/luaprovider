@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/luevano/luaprovider/lib"
+	luahttp "github.com/luevano/luaprovider/lib/http"
 	"github.com/luevano/luaprovider/util"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -97,6 +98,28 @@ func TestRequestReusedInALaterCall(t *testing.T) {
 assert(request:send():body() == "data", "first send")
 assert(request:send():body() == "data", "the body is sent again")
 `
+	if err := L.DoString(script); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBodyOverTheCap(t *testing.T) {
+	defer luahttp.SetMaxBodySize(4)()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, r.URL.Query().Get("body"))
+	}))
+	defer server.Close()
+
+	L := lua.NewState()
+	defer L.Close()
+	lib.Preload(L, lib.DefaultOptions())
+	L.SetContext(context.Background())
+	script := fmt.Sprintf(`
+local http = require("sdk").http
+assert(http.request("GET", %[1]q .. "?body=1234"):send():body() == "1234", "at the cap")
+local ok, err = pcall(function() http.request("GET", %[1]q .. "?body=12345"):send() end)
+assert(not ok and tostring(err):find("body over 4 bytes"), tostring(err))
+`, server.URL)
 	if err := L.DoString(script); err != nil {
 		t.Fatal(err)
 	}
