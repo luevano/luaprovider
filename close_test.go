@@ -94,8 +94,7 @@ function SearchMangas(query)
 end
 `, server.URL)+"function MangaVolumes"+strings.SplitN(testScript, "function MangaVolumes", 2)[1])
 
-	slow, cancelSlow := context.WithCancel(context.Background())
-	defer cancelSlow()
+	slow := t.Context()
 	go p.SearchMangas(slow, "x")
 	<-started
 
