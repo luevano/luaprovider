@@ -147,6 +147,15 @@ local loop = {}
 loop.self = loop
 assert(not pcall(sdk.encoding.json.encode, loop), "a table inside itself")
 
+local json = sdk.encoding.json
+local arr = json.decode('[1, null, 3]')
+assert(#arr == 3 and arr[2] == json.null and arr[3] == 3, "null keeps its place")
+local n = 0
+for _ in ipairs(arr) do n = n + 1 end
+assert(n == 3, "ipairs past a null: " .. n)
+assert(json.encode(arr) == "[1,null,3]", "null encoded: " .. json.encode(arr))
+assert(json.decode('{"a": null}').a == nil, "null in an object is a missing key")
+
 for _ = 1, 20 do
 	local keys = {}
 	for k in pairs(sdk.encoding.json.decode('{"d": 1, "b": 2, "c": 3, "a": 4}')) do

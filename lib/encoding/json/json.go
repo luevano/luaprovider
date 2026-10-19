@@ -14,10 +14,22 @@ import (
 
 const libName = "json"
 
+// null is JSON's null inside arrays: nil would leave a hole that stops ipairs (as lua-cjson's
+// json.null)
+var null = &lua.LUserData{}
+
 func Lib() *luadoc.Lib {
 	return &luadoc.Lib{
 		Name:        libName,
 		Description: "Provides functions for encoding and decoding JSON.",
+		Vars: []*luadoc.Var{
+			{
+				Name:        "null",
+				Description: "A null inside a decoded array (`item == json.null`), encoded as null. A null in an object is a missing key.",
+				Value:       null,
+				Type:        "userdata",
+			},
+		},
 		Funcs: []*luadoc.Func{
 			{
 				Name:        "decode",
@@ -118,6 +130,11 @@ func (j jsonValue) MarshalJSON() (data []byte, err error) {
 		data, err = json.Marshal(float64(converted))
 	case *lua.LNilType:
 		data = []byte(`null`)
+	case *lua.LUserData:
+		if converted != null {
+			return nil, invalidTypeError(converted.Type())
+		}
+		data = []byte(`null`)
 	case lua.LString:
 		data, err = json.Marshal(string(converted))
 	case *lua.LTable:
@@ -197,6 +214,10 @@ func decodeValue(L *lua.LState, value any) lua.LValue {
 	case []any:
 		arr := L.CreateTable(len(converted), 0)
 		for _, item := range converted {
+			if item == nil {
+				arr.Append(null)
+				continue
+			}
 			arr.Append(decodeValue(L, item))
 		}
 		return arr

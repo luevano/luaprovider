@@ -1292,6 +1292,7 @@ end
 
 --- Provides functions for encoding and decoding JSON.
 --- @class json
+--- @field public null userdata A null inside a decoded array (`item == json.null`), encoded as null. A null in an object is a missing key.
 local json = {}
 
 
