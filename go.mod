@@ -9,8 +9,8 @@ require (
 	github.com/agnivade/levenshtein v1.2.1
 	github.com/go-rod/rod v0.116.2
 	github.com/go-viper/mapstructure/v2 v2.5.0
-	github.com/luevano/gopher-luadoc v0.3.5
-	github.com/luevano/libmangal v0.32.2
+	github.com/luevano/gopher-luadoc v0.3.7
+	github.com/luevano/libmangal v0.32.3
 	github.com/philippgille/gokv v0.7.0
 	github.com/philippgille/gokv/syncmap v0.7.0
 	github.com/robertkrimen/otto v0.5.1
