@@ -329,6 +329,10 @@ function MangaByID(id)
 		sdk.http.request("GET", %q):send():check()
 	elseif id == "fail" then
 		error("broken")
+	elseif id == "empty" then
+		return {}
+	elseif id == "blank" then
+		return {id = " ", title = "Blank"}
 	elseif id ~= "1" then
 		return nil
 	end
@@ -354,6 +358,11 @@ end
 	}
 	if _, _, err := p.MangaByID(ctx, "fail"); err == nil || !strings.Contains(err.Error(), `test: manga "fail": `) {
 		t.Errorf("error: %v", err)
+	}
+	for _, id := range []string{"empty", "blank"} {
+		if manga, found, err := p.MangaByID(ctx, id); err == nil || !strings.Contains(err.Error(), "missing id") || found {
+			t.Errorf("id %s: %v, %v, %v, want a missing id error", id, manga, found, err)
+		}
 	}
 }
 

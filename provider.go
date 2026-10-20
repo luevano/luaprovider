@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -282,10 +283,10 @@ func (p *provider) toManga(table *lua.LTable) (*luaManga, error) {
 	if _, err := p.decode("manga", table, &manga); err != nil {
 		return nil, err
 	}
-	if manga.ID == "" {
+	if strings.TrimSpace(manga.ID) == "" {
 		return nil, errors.New("missing id")
 	}
-	if manga.Title == "" {
+	if strings.TrimSpace(manga.Title) == "" {
 		return nil, errors.New("missing title")
 	}
 
