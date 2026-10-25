@@ -48,6 +48,11 @@ type Options struct {
 	// closed with the provider. Nil: FlareSolverr isn't configured, those requests raise.
 	FlareSolverr func() http.RoundTripper
 
+	// Settings: Optional, the user's values of the provider's declared settings
+	// (libmangal.ProviderInfo.Settings), asked when it loads; scripts read them with
+	// sdk.settings.get. Nil: every setting has its default.
+	Settings lm.SettingsFunc
+
 	// Debug logs what doesn't go through HTTPClient: cache hits, FlareSolverr requests and
 	// headless page loads, in netutil.LoggingTransport's format. Nothing if nil.
 	Debug func(format string, a ...any)
@@ -126,6 +131,14 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 	if options.CacheStore == nil {
 		options.CacheStore = defaults.CacheStore
 	}
+	var set map[string]string
+	if options.Settings != nil {
+		set = options.Settings(l.info.ID)
+	}
+	values, err := l.info.SettingValues(set)
+	if err != nil {
+		return nil, err
+	}
 	log := logger.NewProviderLogger(l.info.ID, l.info.Name)
 	limiter := luahttp.NewLimiter(func(ctx context.Context, message string) { log.Status(ctx, "%s", message) })
 	for _, limit := range options.RateLimits {
@@ -142,7 +155,7 @@ func (l loader) load(ctx context.Context) (_ *provider, err error) {
 	}
 	res.track(store)
 
-	state := newState(options, limiter, store, log, res)
+	state := newState(options, l.info.Settings, values, limiter, store, log, res)
 	// don't leave the state open if the script fails
 	defer func() {
 		if err != nil {

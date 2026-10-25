@@ -155,6 +155,7 @@ Which provides these packages:
 - [urls](./lib/urls)
 - [log](./lib/log)
 - [options](./lib/options)
+- [settings](./lib/settings)
 
 </details>
 

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	luadoc "github.com/luevano/gopher-luadoc"
+	"github.com/luevano/libmangal"
 	"github.com/luevano/libmangal/netutil"
 	"github.com/luevano/luaprovider/lib/crypto"
 	"github.com/luevano/luaprovider/lib/encoding"
@@ -17,6 +18,7 @@ import (
 	"github.com/luevano/luaprovider/lib/log"
 	optionsLib "github.com/luevano/luaprovider/lib/options"
 	"github.com/luevano/luaprovider/lib/regexp"
+	settingsLib "github.com/luevano/luaprovider/lib/settings"
 	"github.com/luevano/luaprovider/lib/strings"
 	timeLib "github.com/luevano/luaprovider/lib/time"
 	"github.com/luevano/luaprovider/lib/urls"
@@ -43,6 +45,10 @@ type Options struct {
 	Track func(io.Closer)
 	// Filter: The user's filters, read by scripts from the options library.
 	Filter optionsLib.Filter
+	// Settings: The provider's declared settings, read by scripts from the settings library
+	// with SettingValues' values (a value for every declared key).
+	Settings      []libmangal.ProviderSetting
+	SettingValues map[string]string
 	// FlareSolverr makes the transport of the http library's request:flaresolverr() (one
 	// FlareSolverr session, closed through Track if it's an io.Closer), called on the first
 	// such request; nil if FlareSolverr isn't configured.
@@ -95,6 +101,7 @@ func Lib(L *lua.LState, options *Options) *luadoc.Lib {
 			}),
 			log.Lib(options.Log, options.Status),
 			optionsLib.Lib(options.Filter),
+			settingsLib.Lib(options.Settings, options.SettingValues),
 		},
 	}
 }

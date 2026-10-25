@@ -19,6 +19,7 @@
 --- @field public http http Package http provides HTTP client implementations. Make HTTP (or HTTPS) requests
 --- @field public log log Logging through mangal's logs, prefixed with the provider id.
 --- @field public options options The user's options, scripts should respect them when the source supports it.
+--- @field public settings settings The user's values of the settings the provider declares in its mangal.toml ([[settings]]).
 local sdk = {}
 
 
@@ -1514,6 +1515,18 @@ end
 --- @field public show_unavailable_chapters boolean Whether chapters that can't be downloaded are shown, those with "unavailable" set are dropped otherwise.
 local options = {}
 
+
+
+--- The user's values of the settings the provider declares in its mangal.toml ([[settings]]).
+--- @class settings
+local settings = {}
+
+
+--- The value of a declared setting, its default if the user didn't set it. Raises for an undeclared key.
+--- @param key string Key of the setting.
+--- @return any value A boolean for bool, a number for int, a list of strings for list, a string for the other kinds (a duration as text, e.g. "500ms").
+function settings.get(key)
+end
 
 
 return sdk
